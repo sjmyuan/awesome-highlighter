@@ -1,0 +1,35 @@
+{
+  "name": "awesome-highlighter",
+  "version": "0.0.1",
+  "description": "A chrome extension to highlight your selected text",
+  "main": "index.js",
+  "scripts": {
+    "build": "node scripts/build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sjmyuan/awesome-highlighter.git"
+  },
+  "keywords": [
+    "Chrome",
+    "Extension",
+    "HTML",
+    "Highlighter"
+  ],
+  "author": "sjmyuan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sjmyuan/awesome-highlighter/issues"
+  },
+  "homepage": "https://github.com/sjmyuan/awesome-highlighter#readme",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.97",
+    "fs-extra": "^8.1.0",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.8.2",
+    "webpack": "^4.41.6",
+    "webpack-dev-server": "^3.10.3"
+  }
+}
