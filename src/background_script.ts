@@ -1,5 +1,3 @@
-import {turndownServie, copyToClipboard} from './types'
-
 const sendMessageToTab = () => {
   console.log('Highlight the selected text')
   chrome.tabs.query({active: true}, (tabs) => {
