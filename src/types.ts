@@ -14,33 +14,52 @@ export const highlightSelection = () => {
   }
 }
 
-export const getAllTextNode = () => {
+export const findIndexOfNode = (node: Node) => {
   const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
-  const nodes: Node[] = []
-  while (treeWalker.nextNode) {
-    nodes.push(treeWalker.currentNode)
+  let index = 0
+  while (treeWalker.nextNode()) {
+    if (node.isSameNode(treeWalker.currentNode)) {
+      return index
+    }
+    index++
   }
-  return nodes
+
+  return -1
+}
+
+export const findNodeByIndex = (index: number) => {
+  const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  let localIndex = 0
+  while (treeWalker.nextNode()) {
+    if (localIndex == index) {
+      return treeWalker.currentNode
+    }
+    localIndex++
+  }
+
+  return undefined
 }
 
 export const generateRangeIndex = (range: Range) => {
-  const allNodes = getAllTextNode()
   return {
-    startNodeIndex: allNodes.findIndex(x => x.isSameNode(range.startContainer)),
+    startNodeIndex: findIndexOfNode(range.startContainer),
     startOffset: range.startOffset,
-    endNodeIndex: allNodes.findIndex(x => x.isSameNode(range.endContainer)),
+    endNodeIndex: findIndexOfNode(range.endContainer),
     endOffset: range.endOffset
   }
 }
 
 export const recoverRange = (rangeIndex: RangeIndex) => {
-  const allNodes = getAllTextNode()
-  const startNode = allNodes[rangeIndex.startNodeIndex]
-  const endNode = allNodes[rangeIndex.endNodeIndex]
-  const range = document.createRange()
-  range.setStart(startNode, rangeIndex.startOffset)
-  range.setEnd(endNode, rangeIndex.endOffset)
-  return range
+  const startNode = findNodeByIndex(rangeIndex.startNodeIndex)
+  const endNode = findNodeByIndex(rangeIndex.endNodeIndex)
+  if (startNode && endNode) {
+    const range = document.createRange()
+    range.setStart(startNode, rangeIndex.startOffset)
+    range.setEnd(endNode, rangeIndex.endOffset)
+    return range
+  } else {
+    return undefined
+  }
 }
 
 export const splitIfNecessary = (node: Text, range: Range) => {
@@ -61,7 +80,14 @@ export const splitIfNecessary = (node: Text, range: Range) => {
   }
 }
 
-export const highlightRange = (range: Range) => {
+export const highlightRange = (mrange: Range) => {
+  const rangeIndex = generateRangeIndex(mrange)
+  const range = recoverRange(rangeIndex)
+  if (!range) {
+    console.log('no range')
+    return
+  }
+
   const root = range.commonAncestorContainer
   const textNodes: Node[] = []
   if (root.hasChildNodes()) {
