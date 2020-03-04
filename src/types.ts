@@ -1,3 +1,10 @@
+export interface RangeIndex {
+  startNodeIndex: number,
+  startOffset: number,
+  endNodeIndex: number,
+  endOffset: number
+}
+
 export const highlightSelection = () => {
   const selection = window.getSelection()
   if (selection) {
@@ -5,6 +12,35 @@ export const highlightSelection = () => {
       highlightRange(selection.getRangeAt(index))
     }
   }
+}
+
+export const getAllTextNode = () => {
+  const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  const nodes: Node[] = []
+  while (treeWalker.nextNode) {
+    nodes.push(treeWalker.currentNode)
+  }
+  return nodes
+}
+
+export const generateRangeIndex = (range: Range) => {
+  const allNodes = getAllTextNode()
+  return {
+    startNodeIndex: allNodes.findIndex(x => x.isSameNode(range.startContainer)),
+    startOffset: range.startOffset,
+    endNodeIndex: allNodes.findIndex(x => x.isSameNode(range.endContainer)),
+    endOffset: range.endOffset
+  }
+}
+
+export const recoverRange = (rangeIndex: RangeIndex) => {
+  const allNodes = getAllTextNode()
+  const startNode = allNodes[rangeIndex.startNodeIndex]
+  const endNode = allNodes[rangeIndex.endNodeIndex]
+  const range = document.createRange()
+  range.setStart(startNode, rangeIndex.startOffset)
+  range.setEnd(endNode, rangeIndex.endOffset)
+  return range
 }
 
 export const splitIfNecessary = (node: Text, range: Range) => {
