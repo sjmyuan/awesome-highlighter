@@ -6,13 +6,10 @@ export interface RangeIndex {
 }
 
 export interface HighlightInfo {
+  url: string,
+  title: string,
   highlightHTML: string,
   rangeIndex: RangeIndex
-}
-
-export interface PageInfo {
-  url: string
-  title: string
 }
 
 export const getAllHighlightInfo: () => Promise<Map<string, HighlightInfo[]>> = () => {
@@ -21,7 +18,13 @@ export const getAllHighlightInfo: () => Promise<Map<string, HighlightInfo[]>> = 
       if (chrome.runtime.lastError) {
         reject(`error when get highlight_information, error is ${chrome.runtime.lastError.toString()}`)
       } else {
-        resolve(item['highlight_information'])
+        console.log(item)
+        console.log(item['highlight_information'])
+        if (item['highlight_information']) {
+          resolve(item['highlight_information'])
+        } else {
+          resolve(new Map())
+        }
       }
     })
   })
@@ -39,14 +42,18 @@ export const saveAllHighlightInfo: (info: Map<string, HighlightInfo[]>) => Promi
   })
 }
 
-export const saveHighlightInfo = async (url: string, info: HighlightInfo) => {
+export const saveHighlightInfo = async (url: string, infos: HighlightInfo[]) => {
+  console.log('get all highlight info')
   const allHighlightInfo = await getAllHighlightInfo()
+  console.log('get current info')
+  console.log(allHighlightInfo)
   const currentUrlInfo = allHighlightInfo.get(url)
   if (currentUrlInfo) {
-    currentUrlInfo.push(info)
-    allHighlightInfo.set(url, currentUrlInfo)
+    console.log('set current info')
+    allHighlightInfo.set(url, currentUrlInfo.concat(infos))
   } else {
-    allHighlightInfo.set(url, [info])
+    console.log('set new info')
+    allHighlightInfo.set(url, infos)
   }
   await saveAllHighlightInfo(allHighlightInfo)
 }
@@ -57,8 +64,9 @@ export const getHighlightInfo = async (url: string) => {
   return currentUrlInfo
 }
 
-export const highlightSelection = async () => {
+export const highlightSelection = () => {
   const selection = window.getSelection()
+  const highlightInfos: HighlightInfo[] = []
   if (selection) {
     for (let index = 0; index < selection.rangeCount; index++) {
       const range = selection.getRangeAt(index)
@@ -66,10 +74,12 @@ export const highlightSelection = async () => {
       const div = document.createElement("div");
       div.appendChild(range.cloneContents());
       const highlightHTML = div.innerHTML;
-      await saveHighlightInfo(document.documentURI, {rangeIndex: rangeIndex, highlightHTML: highlightHTML})
       highlightRange(range)
+      highlightInfos.push({url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML})
     }
   }
+
+  return highlightInfos
 }
 
 export const findIndexOfNode = (node: Node) => {

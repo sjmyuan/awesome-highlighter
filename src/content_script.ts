@@ -1,3 +1,5 @@
 import {highlightSelection} from './types'
 
-highlightSelection()
+const highlightInfos = highlightSelection()
+
+chrome.runtime.sendMessage(highlightInfos)

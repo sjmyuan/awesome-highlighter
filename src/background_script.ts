@@ -1,3 +1,5 @@
+import {HighlightInfo, saveHighlightInfo} from "./types"
+
 const sendMessageToTab = () => {
   console.log('Highlight the selected text')
   chrome.tabs.query({active: true}, (tabs) => {
@@ -9,6 +11,21 @@ const sendMessageToTab = () => {
     }
   })
 }
+
+const onMessageReceived = async (message: HighlightInfo[],
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response?: any) => void) => {
+  console.log('Received message:')
+  console.log(message)
+  if (message && sender.tab) {
+    await saveHighlightInfo(sender.tab.url as string, message)
+    sendResponse(true)
+  } else {
+    console.log('There is no highlight.')
+    sendResponse(false)
+  }
+}
+
 const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
   if (info.menuItemId === 'highlight-text') {
     sendMessageToTab()
@@ -28,6 +45,8 @@ const initBackgroundScript = () => {
       contexts: ['selection'],
     })
   });
+
+  chrome.runtime.onMessage.addListener(onMessageReceived)
 
   chrome.contextMenus.onClicked.addListener(onContextMenuClicked)
 

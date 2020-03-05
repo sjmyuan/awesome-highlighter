@@ -19,7 +19,8 @@
   },
   "permissions": [
     "contextMenus",
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "homepage_url": "https://github.com/sjmyuan/awesome-highlighter"
 }
