@@ -5,11 +5,69 @@ export interface RangeIndex {
   endOffset: number
 }
 
-export const highlightSelection = () => {
+export interface HighlightInfo {
+  highlightHTML: string,
+  rangeIndex: RangeIndex
+}
+
+export interface PageInfo {
+  url: string
+  title: string
+}
+
+export const getAllHighlightInfo: () => Promise<Map<string, HighlightInfo[]>> = () => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get('highlight_information', (item) => {
+      if (chrome.runtime.lastError) {
+        reject(`error when get highlight_information, error is ${chrome.runtime.lastError.toString()}`)
+      } else {
+        resolve(item['highlight_information'])
+      }
+    })
+  })
+}
+
+export const saveAllHighlightInfo: (info: Map<string, HighlightInfo[]>) => Promise<void> = (info: Map<string, HighlightInfo[]>) => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set({highlight_information: info}, () => {
+      if (chrome.runtime.lastError) {
+        reject(`error when set highlight_information, error is ${chrome.runtime.lastError.toString()}`)
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
+export const saveHighlightInfo = async (url: string, info: HighlightInfo) => {
+  const allHighlightInfo = await getAllHighlightInfo()
+  const currentUrlInfo = allHighlightInfo.get(url)
+  if (currentUrlInfo) {
+    currentUrlInfo.push(info)
+    allHighlightInfo.set(url, currentUrlInfo)
+  } else {
+    allHighlightInfo.set(url, [info])
+  }
+  await saveAllHighlightInfo(allHighlightInfo)
+}
+
+export const getHighlightInfo = async (url: string) => {
+  const allHighlightInfo = await getAllHighlightInfo()
+  const currentUrlInfo = allHighlightInfo.get(url)
+  return currentUrlInfo
+}
+
+export const highlightSelection = async () => {
   const selection = window.getSelection()
   if (selection) {
     for (let index = 0; index < selection.rangeCount; index++) {
-      highlightRange(selection.getRangeAt(index))
+      const range = selection.getRangeAt(index)
+      const rangeIndex = generateRangeIndex(range)
+      const div = document.createElement("div");
+      div.appendChild(range.cloneContents());
+      const highlightHTML = div.innerHTML;
+      await saveHighlightInfo(document.documentURI, {rangeIndex: rangeIndex, highlightHTML: highlightHTML})
+      highlightRange(range)
     }
   }
 }
@@ -80,14 +138,7 @@ export const splitIfNecessary = (node: Text, range: Range) => {
   }
 }
 
-export const highlightRange = (mrange: Range) => {
-  const rangeIndex = generateRangeIndex(mrange)
-  const range = recoverRange(rangeIndex)
-  if (!range) {
-    console.log('no range')
-    return
-  }
-
+export const highlightRange = (range: Range) => {
   const root = range.commonAncestorContainer
   const textNodes: Node[] = []
   if (root.hasChildNodes()) {
