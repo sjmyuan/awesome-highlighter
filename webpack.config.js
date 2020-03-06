@@ -7,6 +7,7 @@ module.exports = {
   },
   entry: {
     content_script: [path.join(__dirname, 'src/content_script')],
+    content_script_recover_highlight: [path.join(__dirname, 'src/content_script_recover_highlight')],
     background_script: [path.join(__dirname, 'src/background_script')],
   },
   output: {

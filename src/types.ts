@@ -12,27 +12,23 @@ export interface HighlightInfo {
   rangeIndex: RangeIndex
 }
 
-export const getAllHighlightInfo: () => Promise<Map<string, HighlightInfo[]>> = () => {
+export const getHighlightInfo: (url: string) => Promise<HighlightInfo[]> = (url: string) => {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.get('highlight_information', (item) => {
+    chrome.storage.local.get(url, (item) => {
       if (chrome.runtime.lastError) {
-        reject(`error when get highlight_information, error is ${chrome.runtime.lastError.toString()}`)
+        reject(`error when get ${url}, error is ${chrome.runtime.lastError.toString()}`)
       } else {
-        console.log(item)
-        console.log(item['highlight_information'])
-        if (item['highlight_information']) {
-          resolve(item['highlight_information'])
-        } else {
-          resolve(new Map())
-        }
+        resolve(item[url])
       }
     })
   })
 }
 
-export const saveAllHighlightInfo: (info: Map<string, HighlightInfo[]>) => Promise<void> = (info: Map<string, HighlightInfo[]>) => {
+export const saveHighlightInfo: (url: string, infos: HighlightInfo[]) => Promise<void> = (url: string, infos: HighlightInfo[]) => {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.set({highlight_information: info}, () => {
+    const obj: {[key: string]: HighlightInfo[];} = {}
+    obj[url] = infos
+    chrome.storage.local.set(obj, () => {
       if (chrome.runtime.lastError) {
         reject(`error when set highlight_information, error is ${chrome.runtime.lastError.toString()}`)
       } else {
@@ -40,28 +36,6 @@ export const saveAllHighlightInfo: (info: Map<string, HighlightInfo[]>) => Promi
       }
     })
   })
-}
-
-export const saveHighlightInfo = async (url: string, infos: HighlightInfo[]) => {
-  console.log('get all highlight info')
-  const allHighlightInfo = await getAllHighlightInfo()
-  console.log('get current info')
-  console.log(allHighlightInfo)
-  const currentUrlInfo = allHighlightInfo.get(url)
-  if (currentUrlInfo) {
-    console.log('set current info')
-    allHighlightInfo.set(url, currentUrlInfo.concat(infos))
-  } else {
-    console.log('set new info')
-    allHighlightInfo.set(url, infos)
-  }
-  await saveAllHighlightInfo(allHighlightInfo)
-}
-
-export const getHighlightInfo = async (url: string) => {
-  const allHighlightInfo = await getAllHighlightInfo()
-  const currentUrlInfo = allHighlightInfo.get(url)
-  return currentUrlInfo
 }
 
 export const highlightSelection = () => {
@@ -127,6 +101,14 @@ export const recoverRange = (rangeIndex: RangeIndex) => {
     return range
   } else {
     return undefined
+  }
+}
+
+export const recoverHighlight = async () => {
+  const highlightInfos = await getHighlightInfo(document.documentURI)
+  if (highlightInfos instanceof Array) {
+    const ranges = highlightInfos.map(info => recoverRange(info.rangeIndex))
+    ranges.forEach(range => range && highlightRange(range))
   }
 }
 
