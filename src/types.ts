@@ -104,12 +104,9 @@ export const recoverRange = (rangeIndex: RangeIndex) => {
   }
 }
 
-export const recoverHighlight = async () => {
-  const highlightInfos = await getHighlightInfo(document.documentURI)
-  if (highlightInfos instanceof Array) {
-    const ranges = highlightInfos.map(info => recoverRange(info.rangeIndex))
-    ranges.forEach(range => range && highlightRange(range))
-  }
+export const recoverHighlight = (rangeIndexes: RangeIndex[]) => {
+  const ranges = rangeIndexes.map(index => recoverRange(index))
+  ranges.forEach(range => range && highlightRange(range))
 }
 
 export const splitIfNecessary = (node: Text, range: Range) => {

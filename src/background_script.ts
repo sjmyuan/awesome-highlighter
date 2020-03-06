@@ -12,12 +12,12 @@ const sendMessageToTab = () => {
   })
 }
 
-const onMessageReceived = async (message: HighlightInfo[],
+const onMessageReceived = async (message: any,
   sender: chrome.runtime.MessageSender,
   sendResponse: (response?: any) => void) => {
   console.log('Received message:')
   console.log(message)
-  if (message && sender.tab && sender.tab.url) {
+  if ((message instanceof Array) && sender.tab && sender.tab.url) {
     const preHighlightInfos = await getHighlightInfo(sender.tab.url)
     if (preHighlightInfos instanceof Array) {
       await saveHighlightInfo(sender.tab.url, preHighlightInfos.concat(message))
@@ -25,8 +25,15 @@ const onMessageReceived = async (message: HighlightInfo[],
       await saveHighlightInfo(sender.tab.url, message)
     }
     sendResponse(true)
-  } else {
-    console.log('There is no highlight.')
+  } else if (message == 'fetch-highlight-ranges' && sender.tab && sender.tab.url) {
+    console.log('receive message to recover highlight')
+    const preHighlightInfos = await getHighlightInfo(sender.tab.url)
+    console.log('send back highlight info')
+    console.log(preHighlightInfos)
+    sendResponse(preHighlightInfos)
+  }
+  else {
+    console.log('Invalid message')
     sendResponse(false)
   }
 }
@@ -34,6 +41,17 @@ const onMessageReceived = async (message: HighlightInfo[],
 const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
   if (info.menuItemId === 'highlight-text') {
     sendMessageToTab()
+  }
+
+  if (info.menuItemId === 'recover-highlight') {
+    chrome.tabs.query({active: true}, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.executeScript(tabs[0].id as number, {file: 'js/content_script_recover_highlight.bundle.js'})
+      }
+      else {
+        console.log('No active tab')
+      }
+    })
   }
 }
 
@@ -63,6 +81,10 @@ const initBackgroundScript = () => {
       id: 'highlight-text',
       title: 'Highlight The Selected Text',
       contexts: ['selection'],
+    })
+    chrome.contextMenus.create({
+      id: 'recover-highlight',
+      title: 'Recover Highlight'
     })
   });
 
