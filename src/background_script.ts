@@ -2,9 +2,10 @@ import {HighlightInfo, saveHighlightInfo, getHighlightInfo} from "./types"
 
 const getHighlightInfoFromTab = async (tab: chrome.tabs.Tab) => {
   console.log('Send message to get highlightInfos')
+  console.log(tab)
   if (tab.id && tab.url) {
     const preHighlightInfos = await getHighlightInfo(tab.url as string)
-    chrome.tabs.sendMessage(tab.id, {'get_highlight_info': true}, (message: {highlightInfos: HighlightInfo[]}) => {
+    chrome.tabs.sendMessage(tab.id, 'get_highlight_info', (message: {highlightInfos: HighlightInfo[]}) => {
       if (preHighlightInfos instanceof Array) {
         saveHighlightInfo(tab.url as string, preHighlightInfos.concat(message.highlightInfos))
       } else {
@@ -14,19 +15,19 @@ const getHighlightInfoFromTab = async (tab: chrome.tabs.Tab) => {
   }
 }
 
-const sendHighlightInfoToTab = async (tab: chrome.tabs.Tab) => {
-  console.log('send message to recover highlight')
-  if (tab.url && tab.id) {
-    const preHighlightInfos = await getHighlightInfo(tab.url)
-    console.log('send back highlight info')
-    console.log(preHighlightInfos)
-    chrome.tabs.sendMessage(tab.id, {'recover_highlight_info': preHighlightInfos})
-  }
-}
-
-const onMessageReceived = async (message: any,
+const onMessageReceived = (message: any,
   sender: chrome.runtime.MessageSender,
   sendResponse: (response?: any) => void) => {
+
+  if (message === 'fetch_historical_highlight_info' && sender.url) {
+    getHighlightInfo(sender.url).then(historicalHighlightInfos => {
+      console.log('send back historical highlight info')
+      console.log(historicalHighlightInfos)
+      sendResponse(historicalHighlightInfos)
+    })
+  }
+
+  return true
 }
 
 const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
@@ -37,14 +38,6 @@ const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrom
 
 const onBrowserActionClicked = () => {
   //getHighlightInfoFromTab(tab)
-}
-
-const onTabUpdated = (tabId: number, info: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
-  console.log('tab updated')
-  console.log(tab)
-  if (info.status == 'complete') {
-    sendHighlightInfoToTab(tab)
-  }
 }
 
 const initBackgroundScript = () => {
@@ -62,8 +55,6 @@ const initBackgroundScript = () => {
   chrome.contextMenus.onClicked.addListener(onContextMenuClicked)
 
   chrome.browserAction.onClicked.addListener(onBrowserActionClicked)
-
-  chrome.tabs.onUpdated.addListener(onTabUpdated)
 }
 
 initBackgroundScript();

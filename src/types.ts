@@ -1,8 +1,10 @@
 export interface RangeIndex {
   startNodeIndex: number,
   startOffset: number,
+  startNodeContent: string | null,
   endNodeIndex: number,
-  endOffset: number
+  endOffset: number,
+  endNodeContent: string | null
 }
 
 export interface HighlightInfo {
@@ -12,13 +14,22 @@ export interface HighlightInfo {
   rangeIndex: RangeIndex
 }
 
+const HighlightNodeFilter: NodeFilter = {
+  acceptNode(node: Node): number {
+    return node.textContent && node.textContent.trim() !== "" ? 1 : 0
+  }
+}
+
+
 export const getHighlightInfo: (url: string) => Promise<HighlightInfo[]> = (url: string) => {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(url, (item) => {
       if (chrome.runtime.lastError) {
         reject(`error when get ${url}, error is ${chrome.runtime.lastError.toString()}`)
       } else {
-        resolve(item[url])
+        if (item[url]) {
+          resolve(item[url])
+        } else {resolve([])}
       }
     })
   })
@@ -48,8 +59,15 @@ export const highlightSelection = () => {
       const div = document.createElement("div");
       div.appendChild(range.cloneContents());
       const highlightHTML = div.innerHTML;
-      highlightRange(range)
-      highlightInfos.push({url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML})
+
+      const recoveredRange = recoverRange(rangeIndex)
+      if (recoveredRange) {
+        highlightRange(recoveredRange)
+        highlightInfos.push({url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML})
+      } else {
+        console.log('can not recover index')
+        console.log(rangeIndex)
+      }
     }
   }
 
@@ -57,26 +75,31 @@ export const highlightSelection = () => {
 }
 
 export const findIndexOfNode = (node: Node) => {
+
   const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
   let index = 0
   while (treeWalker.nextNode()) {
-    if (node.isSameNode(treeWalker.currentNode)) {
-      return index
+    if (treeWalker.currentNode.textContent === node.textContent) {
+      if (node.isSameNode(treeWalker.currentNode)) {
+        return index
+      }
+      index++
     }
-    index++
   }
 
   return -1
 }
 
-export const findNodeByIndex = (index: number) => {
-  const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+export const findNodeByIndex = (index: number, content: string | null) => {
+  const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, HighlightNodeFilter)
   let localIndex = 0
   while (treeWalker.nextNode()) {
-    if (localIndex == index) {
-      return treeWalker.currentNode
+    if (treeWalker.currentNode.textContent === content) {
+      if (localIndex == index) {
+        return treeWalker.currentNode
+      }
+      localIndex++
     }
-    localIndex++
   }
 
   console.log(`not found node ${index}`)
@@ -88,14 +111,16 @@ export const generateRangeIndex = (range: Range) => {
   return {
     startNodeIndex: findIndexOfNode(range.startContainer),
     startOffset: range.startOffset,
+    startNodeContent: range.startContainer.textContent,
     endNodeIndex: findIndexOfNode(range.endContainer),
-    endOffset: range.endOffset
+    endOffset: range.endOffset,
+    endNodeContent: range.startContainer.textContent
   }
 }
 
 export const recoverRange = (rangeIndex: RangeIndex) => {
-  const startNode = findNodeByIndex(rangeIndex.startNodeIndex)
-  const endNode = findNodeByIndex(rangeIndex.endNodeIndex)
+  const startNode = findNodeByIndex(rangeIndex.startNodeIndex, rangeIndex.startNodeContent)
+  const endNode = findNodeByIndex(rangeIndex.endNodeIndex, rangeIndex.endNodeContent)
   if (startNode && endNode) {
     const range = document.createRange()
     range.setStart(startNode, rangeIndex.startOffset)
