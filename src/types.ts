@@ -49,25 +49,57 @@ export const saveHighlightInfo: (url: string, infos: HighlightInfo[]) => Promise
   })
 }
 
-export const highlightSelection = () => {
+export const getRangeContent = (range: Range) => {
+  const div = document.createElement("div");
+  div.appendChild(range.cloneContents());
+  const highlightHTML = div.innerHTML;
+  return highlightHTML
+}
+
+export const mergeHighlightInfo = (info1: HighlightInfo, info2: HighlightInfo) => {
+  const range1 = recoverRange(info1.rangeIndex)
+  const range2 = recoverRange(info2.rangeIndex)
+  if (range1 && range2) {
+    if (range1.intersectsNode(range2.startContainer) && range1.intersectsNode(range2.endContainer)) {
+      return [info1]
+    } else if (range1.intersectsNode(range2.startContainer)) {
+      const newRange = document.createRange()
+      newRange.setStart(range1.startContainer, range1.startOffset)
+      newRange.setEnd(range2.endContainer, range2.endOffset)
+      return [generateHighlightInfo(newRange)]
+    } else if (range1.intersectsNode(range2.endContainer)) {
+      const newRange = document.createRange()
+      newRange.setStart(range2.startContainer, range2.startOffset)
+      newRange.setEnd(range1.endContainer, range1.endOffset)
+      return [generateHighlightInfo(newRange)]
+    } else if (range2.intersectsNode(range1.startContainer)) {
+      return [info2]
+    } else {
+      return [info1, info2]
+    }
+  } else if (range1) {
+    return [info1]
+  } else {
+    return [info2]
+  }
+}
+
+export const generateHighlightInfo = (range: Range) => {
+  const rangeIndex = generateRangeIndex(range)
+  const highlightHTML = getRangeContent(range)
+  return {url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML}
+}
+
+export const highlightSelection = (historicalHighlightInfos: HighlightInfo[]) => {
   const selection = window.getSelection()
   const highlightInfos: HighlightInfo[] = []
   if (selection) {
     for (let index = 0; index < selection.rangeCount; index++) {
       const range = selection.getRangeAt(index)
-      const rangeIndex = generateRangeIndex(range)
-      const div = document.createElement("div");
-      div.appendChild(range.cloneContents());
-      const highlightHTML = div.innerHTML;
+      const highlightInfo = generateHighlightInfo(range)
 
-      const recoveredRange = recoverRange(rangeIndex)
-      if (recoveredRange) {
-        highlightRange(recoveredRange)
-        highlightInfos.push({url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML})
-      } else {
-        console.log('can not recover index')
-        console.log(rangeIndex)
-      }
+      highlightRange(range)
+      highlightInfos.push(generateHighlightInfo(range))
     }
   }
 
