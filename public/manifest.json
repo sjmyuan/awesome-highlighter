@@ -17,9 +17,22 @@
     ],
     "persistent": false
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "all_frames": false,
+      "js": [
+        "/js/content_script.bundle.js"
+      ]
+    }
+  ],
   "permissions": [
     "contextMenus",
-    "activeTab"
+    "activeTab",
+    "storage",
+    "tabs"
   ],
   "homepage_url": "https://github.com/sjmyuan/awesome-highlighter"
 }

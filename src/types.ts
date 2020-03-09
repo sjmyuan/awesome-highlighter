@@ -1,10 +1,116 @@
+export interface RangeIndex {
+  startNodeIndex: number,
+  startOffset: number,
+  endNodeIndex: number,
+  endOffset: number
+}
+
+export interface HighlightInfo {
+  url: string,
+  title: string,
+  highlightHTML: string,
+  rangeIndex: RangeIndex
+}
+
+export const getHighlightInfo: (url: string) => Promise<HighlightInfo[]> = (url: string) => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(url, (item) => {
+      if (chrome.runtime.lastError) {
+        reject(`error when get ${url}, error is ${chrome.runtime.lastError.toString()}`)
+      } else {
+        resolve(item[url])
+      }
+    })
+  })
+}
+
+export const saveHighlightInfo: (url: string, infos: HighlightInfo[]) => Promise<void> = (url: string, infos: HighlightInfo[]) => {
+  return new Promise((resolve, reject) => {
+    const obj: {[key: string]: HighlightInfo[];} = {}
+    obj[url] = infos
+    chrome.storage.local.set(obj, () => {
+      if (chrome.runtime.lastError) {
+        reject(`error when set highlight_information, error is ${chrome.runtime.lastError.toString()}`)
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
 export const highlightSelection = () => {
   const selection = window.getSelection()
+  const highlightInfos: HighlightInfo[] = []
   if (selection) {
     for (let index = 0; index < selection.rangeCount; index++) {
-      highlightRange(selection.getRangeAt(index))
+      const range = selection.getRangeAt(index)
+      const rangeIndex = generateRangeIndex(range)
+      const div = document.createElement("div");
+      div.appendChild(range.cloneContents());
+      const highlightHTML = div.innerHTML;
+      highlightRange(range)
+      highlightInfos.push({url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML})
     }
   }
+
+  return highlightInfos
+}
+
+export const findIndexOfNode = (node: Node) => {
+  const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  let index = 0
+  while (treeWalker.nextNode()) {
+    if (node.isSameNode(treeWalker.currentNode)) {
+      return index
+    }
+    index++
+  }
+
+  return -1
+}
+
+export const findNodeByIndex = (index: number) => {
+  const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  let localIndex = 0
+  while (treeWalker.nextNode()) {
+    if (localIndex == index) {
+      return treeWalker.currentNode
+    }
+    localIndex++
+  }
+
+  console.log(`not found node ${index}`)
+
+  return undefined
+}
+
+export const generateRangeIndex = (range: Range) => {
+  return {
+    startNodeIndex: findIndexOfNode(range.startContainer),
+    startOffset: range.startOffset,
+    endNodeIndex: findIndexOfNode(range.endContainer),
+    endOffset: range.endOffset
+  }
+}
+
+export const recoverRange = (rangeIndex: RangeIndex) => {
+  const startNode = findNodeByIndex(rangeIndex.startNodeIndex)
+  const endNode = findNodeByIndex(rangeIndex.endNodeIndex)
+  if (startNode && endNode) {
+    const range = document.createRange()
+    range.setStart(startNode, rangeIndex.startOffset)
+    range.setEnd(endNode, rangeIndex.endOffset)
+    return range
+  } else {
+    return undefined
+  }
+}
+
+export const recoverHighlight = (highlightInfos: HighlightInfo[]) => {
+  const ranges = highlightInfos.map(info => recoverRange(info.rangeIndex))
+  console.log('ranges')
+  console.log(ranges)
+  ranges.forEach(range => range && highlightRange(range))
 }
 
 export const splitIfNecessary = (node: Text, range: Range) => {
