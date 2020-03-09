@@ -79,6 +79,8 @@ export const findNodeByIndex = (index: number) => {
     localIndex++
   }
 
+  console.log(`not found node ${index}`)
+
   return undefined
 }
 
@@ -104,8 +106,10 @@ export const recoverRange = (rangeIndex: RangeIndex) => {
   }
 }
 
-export const recoverHighlight = (rangeIndexes: RangeIndex[]) => {
-  const ranges = rangeIndexes.map(index => recoverRange(index))
+export const recoverHighlight = (highlightInfos: HighlightInfo[]) => {
+  const ranges = highlightInfos.map(info => recoverRange(info.rangeIndex))
+  console.log('ranges')
+  console.log(ranges)
   ranges.forEach(range => range && highlightRange(range))
 }
 
