@@ -1,3 +1,5 @@
+import {v4 as uuidv4} from 'uuid';
+
 export interface RangeIndex {
   startNodeIndex: number,
   startOffset: number,
@@ -8,6 +10,7 @@ export interface RangeIndex {
 }
 
 export interface HighlightInfo {
+  id: string,
   url: string,
   title: string,
   highlightHTML: string,
@@ -16,7 +19,12 @@ export interface HighlightInfo {
 
 const HighlightNodeFilter: NodeFilter = {
   acceptNode(node: Node): number {
-    return node.textContent && node.textContent.trim() !== "" ? 1 : 0
+    const parentElement = node.parentElement
+    if (parentElement && parentElement.classList.contains('awesome-highlighter-rendered')) {
+      return 0
+    } else {
+      return 1
+    }
   }
 }
 
@@ -56,38 +64,10 @@ export const getRangeContent = (range: Range) => {
   return highlightHTML
 }
 
-export const mergeHighlightInfo = (info1: HighlightInfo, info2: HighlightInfo) => {
-  const range1 = recoverRange(info1.rangeIndex)
-  const range2 = recoverRange(info2.rangeIndex)
-  if (range1 && range2) {
-    if (range1.intersectsNode(range2.startContainer) && range1.intersectsNode(range2.endContainer)) {
-      return [info1]
-    } else if (range1.intersectsNode(range2.startContainer)) {
-      const newRange = document.createRange()
-      newRange.setStart(range1.startContainer, range1.startOffset)
-      newRange.setEnd(range2.endContainer, range2.endOffset)
-      return [generateHighlightInfo(newRange)]
-    } else if (range1.intersectsNode(range2.endContainer)) {
-      const newRange = document.createRange()
-      newRange.setStart(range2.startContainer, range2.startOffset)
-      newRange.setEnd(range1.endContainer, range1.endOffset)
-      return [generateHighlightInfo(newRange)]
-    } else if (range2.intersectsNode(range1.startContainer)) {
-      return [info2]
-    } else {
-      return [info1, info2]
-    }
-  } else if (range1) {
-    return [info1]
-  } else {
-    return [info2]
-  }
-}
-
-export const generateHighlightInfo = (range: Range) => {
+export const generateHighlightInfo = (range: Range, id: string) => {
   const rangeIndex = generateRangeIndex(range)
   const highlightHTML = getRangeContent(range)
-  return {url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML}
+  return {id: id, url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML}
 }
 
 export const highlightSelection = () => {
@@ -96,8 +76,9 @@ export const highlightSelection = () => {
   if (selection) {
     for (let index = 0; index < selection.rangeCount; index++) {
       const range = selection.getRangeAt(index)
-      highlightInfos.push(generateHighlightInfo(range))
-      highlightRange(range)
+      const id = uuidv4()
+      highlightInfos.push(generateHighlightInfo(range, id))
+      highlightRange(range, id)
     }
   }
 
@@ -124,7 +105,7 @@ export const findIndexOfNode = (node: Node) => {
 }
 
 export const findNodeByIndex = (index: number, content: string | null) => {
-  const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, HighlightNodeFilter)
+  const treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
   let localIndex = 0
   while (treeWalker.nextNode()) {
     if (treeWalker.currentNode.textContent === content) {
@@ -149,7 +130,7 @@ export const generateRangeIndex = (range: Range) => {
     startNodeContent: range.startContainer.textContent,
     endNodeIndex: findIndexOfNode(range.endContainer),
     endOffset: range.endOffset,
-    endNodeContent: range.startContainer.textContent
+    endNodeContent: range.endContainer.textContent
   }
 }
 
@@ -167,51 +148,103 @@ export const recoverRange = (rangeIndex: RangeIndex) => {
 }
 
 export const recoverHighlight = (highlightInfos: HighlightInfo[]) => {
-  const ranges = highlightInfos.map(info => recoverRange(info.rangeIndex))
-  console.log('ranges')
-  console.log(ranges)
-  ranges.forEach(range => range && highlightRange(range))
+  highlightInfos.forEach(info => {
+    const range = recoverRange(info.rangeIndex)
+    console.log('range:' + info.id)
+    console.log(range)
+    if (range) {
+      highlightRange(range, info.id)
+    }
+  })
+}
+
+export const markNode = (node: Text, className: string, id: string) => {
+  const parentNode = node.parentNode
+  if (parentNode) {
+    const mark = document.createElement('mark')
+    mark.classList.add(className)
+    mark.style.backgroundColor = 'yellow'
+    mark.setAttribute('data-highlight-id', id)
+    mark.appendChild(node.cloneNode())
+    parentNode.replaceChild(mark, node)
+  }
+}
+
+export const unmarkNode = (node: HTMLElement) => {
+  if (node.tagName === 'mark' && node.getAttribute('data-highlight-id')) {
+    const parentNode = node.parentNode
+    if (parentNode) {
+      const childNodes = node.childNodes
+      if (childNodes.length > 0) {
+        childNodes.forEach(c => {
+          parentNode.insertBefore(c, node)
+        })
+        parentNode.removeChild(node)
+      }
+    }
+  }
 }
 
 export const splitIfNecessary = (node: Text, range: Range) => {
   let isStartNode: boolean = node.isSameNode(range.startContainer)
   let isEndNode: boolean = node.isSameNode(range.endContainer)
-  const parentNode = node.parentNode
 
-  if ((isStartNode || isEndNode) && parentNode) {
-    const div = document.createElement('a')
-    div.style.display = 'none'
-    div.appendChild(node.cloneNode())
-    parentNode.insertBefore(div, node)
-  }
+  console.log('split_if_necessary')
+
+  console.log(node)
 
   if (isStartNode && isEndNode) {
-    const remainingNode = node.splitText(range.startOffset)
-    remainingNode.splitText(range.endOffset)
-    return remainingNode
+    // -----------------
+    //     start   end
+    //      |      |
+    // first second thrid
+
+    console.log('same start and end')
+    const first = node
+    const second = first.splitText(range.startOffset)
+    const third = second.splitText(range.endOffset)
+    return second
   } else if (isStartNode) {
-    return node.splitText(range.startOffset)
+    // -----------------
+    //     start
+    //      |
+    // first second
+
+    console.log('start')
+    const first = node
+    const second = first.splitText(range.startOffset)
+    return second
   } else if (isEndNode) {
-    node.splitText(range.endOffset)
-    return node
+    // -----------------
+    //     end
+    //      |
+    // first second
+
+    console.log('end')
+
+    const first = node
+    const second = first.splitText(range.endOffset)
+    return first
   } else {
+    console.log('inner')
+
     return node
   }
 }
 
-export const highlightRange = (range: Range) => {
+export const highlightRange = (range: Range, id: string) => {
   const root = range.commonAncestorContainer
-  const textNodes: Node[] = []
+  const textNodes: Text[] = []
   if (root.hasChildNodes()) {
     const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
     while (treeWalker.nextNode()) {
       const currentNode: Node = treeWalker.currentNode
       if (range.intersectsNode(currentNode)) {
-        textNodes.push(splitIfNecessary(currentNode as Text, range))
+        textNodes.push(currentNode as Text)
       }
     }
   } else if (root.nodeType === Node.TEXT_NODE) {
-    textNodes.push(splitIfNecessary(root as Text, range))
+    textNodes.push(root as Text)
   } else {
     console.log('Can not process this range, the root dom is')
     console.log(root)
@@ -220,15 +253,9 @@ export const highlightRange = (range: Range) => {
   console.log(textNodes)
   for (let index = 0; index < textNodes.length; index++) {
     const currentNode = textNodes[index];
-    if (currentNode) {
-      const currentParent = currentNode.parentNode
-      if (currentNode.textContent && currentNode.textContent.trim().length > 0) {
-        const div = document.createElement('a')
-        div.style.background = 'yellow'
-        div.style.width = 'fit-content'
-        div.appendChild(currentNode.cloneNode())
-        currentParent?.replaceChild(div, currentNode)
-      }
+    const splitedNode: Text = splitIfNecessary(currentNode, range)
+    if (splitedNode.textContent && splitedNode.textContent.trim().length > 0) {
+      markNode(splitedNode, 'awesome-highlighter', id)
     }
   }
 }
