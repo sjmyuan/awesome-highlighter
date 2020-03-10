@@ -1,16 +1,11 @@
 import {HighlightInfo, saveHighlightInfo, getHighlightInfo} from "./types"
 
-const getHighlightInfoFromTab = async (tab: chrome.tabs.Tab) => {
+const getHighlightInfoFromTab = (tab: chrome.tabs.Tab) => {
   console.log('Send message to get highlightInfos')
   console.log(tab)
   if (tab.id && tab.url) {
-    const preHighlightInfos = await getHighlightInfo(tab.url as string)
     chrome.tabs.sendMessage(tab.id, 'get_highlight_info', (message: {highlightInfos: HighlightInfo[]}) => {
-      if (preHighlightInfos instanceof Array) {
-        saveHighlightInfo(tab.url as string, preHighlightInfos.concat(message.highlightInfos))
-      } else {
-        saveHighlightInfo(tab.url as string, message.highlightInfos)
-      }
+      saveHighlightInfo(tab.url as string, message.highlightInfos)
     })
   }
 }

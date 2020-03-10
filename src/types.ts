@@ -90,14 +90,12 @@ export const generateHighlightInfo = (range: Range) => {
   return {url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML}
 }
 
-export const highlightSelection = (historicalHighlightInfos: HighlightInfo[]) => {
+export const highlightSelection = () => {
   const selection = window.getSelection()
   const highlightInfos: HighlightInfo[] = []
   if (selection) {
     for (let index = 0; index < selection.rangeCount; index++) {
       const range = selection.getRangeAt(index)
-      const highlightInfo = generateHighlightInfo(range)
-
       highlightRange(range)
       highlightInfos.push(generateHighlightInfo(range))
     }

@@ -1,4 +1,4 @@
-import {highlightSelection, recoverHighlight, HighlightInfo} from './types'
+import {highlightSelection, recoverHighlight, HighlightInfo, mergeHighlightInfo} from './types'
 
 let allHighlightInfos: HighlightInfo[] = []
 
@@ -7,15 +7,27 @@ const onExtensionMessage = (request: any, sender: chrome.runtime.MessageSender, 
   console.log(request)
   if (request === 'get_highlight_info') {
     const highlightInfos = highlightSelection()
-    const newHighlightInfos = allHighlightInfos.concat(highlightInfos)
-    const mergedHighlightInfos = allHighlightInfos.concat(highlightInfos)
+    if (allHighlightInfos.length > 0) {
+      let newAllHighlightInfos = allHighlightInfos
 
-    for (let index = 0; index < allHighlightInfos.length; index++) {
+      for (let index = 0; index < highlightInfos.length; index++) {
+        const mergedHighlightInfos: HighlightInfo[] = []
+
+        for (let localIndex = 0; localIndex < newAllHighlightInfos.length; localIndex++) {
+          mergedHighlightInfos.concat(mergeHighlightInfo(highlightInfos[index], newAllHighlightInfos[localIndex]))
+        }
+
+        newAllHighlightInfos = mergedHighlightInfos
+      }
+
+      allHighlightInfos = newAllHighlightInfos
     }
-
+    else {
+      allHighlightInfos = highlightInfos
+    }
     console.log('return highlight information')
-    console.log(highlightInfos)
-    sendResponse({highlightInfos: highlightInfos});
+    console.log(allHighlightInfos)
+    sendResponse({highlightInfos: allHighlightInfos});
   }
 }
 
