@@ -96,8 +96,8 @@ export const highlightSelection = () => {
   if (selection) {
     for (let index = 0; index < selection.rangeCount; index++) {
       const range = selection.getRangeAt(index)
-      highlightRange(range)
       highlightInfos.push(generateHighlightInfo(range))
+      highlightRange(range)
     }
   }
 
@@ -116,6 +116,9 @@ export const findIndexOfNode = (node: Node) => {
       index++
     }
   }
+
+  console.log('not found node index')
+  console.log(node)
 
   return -1
 }
@@ -138,6 +141,8 @@ export const findNodeByIndex = (index: number, content: string | null) => {
 }
 
 export const generateRangeIndex = (range: Range) => {
+  console.log('range-----')
+  console.log(range)
   return {
     startNodeIndex: findIndexOfNode(range.startContainer),
     startOffset: range.startOffset,
@@ -171,6 +176,14 @@ export const recoverHighlight = (highlightInfos: HighlightInfo[]) => {
 export const splitIfNecessary = (node: Text, range: Range) => {
   let isStartNode: boolean = node.isSameNode(range.startContainer)
   let isEndNode: boolean = node.isSameNode(range.endContainer)
+  const parentNode = node.parentNode
+
+  if ((isStartNode || isEndNode) && parentNode) {
+    const div = document.createElement('a')
+    div.style.display = 'none'
+    div.appendChild(node.cloneNode())
+    parentNode.insertBefore(div, node)
+  }
 
   if (isStartNode && isEndNode) {
     const remainingNode = node.splitText(range.startOffset)
@@ -210,9 +223,6 @@ export const highlightRange = (range: Range) => {
     if (currentNode) {
       const currentParent = currentNode.parentNode
       if (currentNode.textContent && currentNode.textContent.trim().length > 0) {
-        console.log(currentNode)
-        console.log(currentParent)
-        console.log('----')
         const div = document.createElement('a')
         div.style.background = 'yellow'
         div.style.width = 'fit-content'

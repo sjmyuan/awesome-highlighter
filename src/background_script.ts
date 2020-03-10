@@ -5,6 +5,7 @@ const getHighlightInfoFromTab = (tab: chrome.tabs.Tab) => {
   console.log(tab)
   if (tab.id && tab.url) {
     chrome.tabs.sendMessage(tab.id, 'get_highlight_info', (message: {highlightInfos: HighlightInfo[]}) => {
+      console.log(message)
       saveHighlightInfo(tab.url as string, message.highlightInfos)
     })
   }
