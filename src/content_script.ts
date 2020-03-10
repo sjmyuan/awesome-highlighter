@@ -1,26 +1,28 @@
 import {highlightSelection, recoverHighlight, HighlightInfo} from './types'
 
+let allHighlightInfos: HighlightInfo[] = []
+
 const onExtensionMessage = (request: any, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
   console.log('receive message')
   console.log(request)
-  if (request['get_highlight_info'] != undefined) {
+  if (request === 'get_highlight_info') {
     const highlightInfos = highlightSelection()
+    allHighlightInfos = allHighlightInfos.concat(highlightInfos)
     console.log('return highlight information')
-    console.log(highlightInfos)
-    sendResponse({highlightInfos: highlightInfos});
+    console.log(allHighlightInfos)
+    sendResponse({highlightInfos: allHighlightInfos});
   }
+}
 
-  if (request['recover_highlight_info'] != undefined) {
-    const highlightInfos: HighlightInfo[] = request['recover_highlight_info'] as HighlightInfo[]
+const initContentScript: () => void = () => {
+  console.log('loading script')
+  chrome.runtime.onMessage.addListener(onExtensionMessage)
+  chrome.runtime.sendMessage('fetch_historical_highlight_info', (highlightInfos: HighlightInfo[]) => {
     console.log('recovering highlight infos')
     console.log(highlightInfos)
+    allHighlightInfos = highlightInfos
     recoverHighlight(highlightInfos)
-    sendResponse('success')
-  }
-}
-const initContentScript: () => void = async () => {
-  console.log('loading script')
-  chrome.runtime.onMessage.addListener(onExtensionMessage);
+  })
 }
 
-initContentScript();
+initContentScript()
