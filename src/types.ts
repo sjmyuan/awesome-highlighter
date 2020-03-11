@@ -23,6 +23,11 @@ export interface HighlightOperation {
   info?: HighlightInfo
 }
 
+export interface Message {
+  id: string
+  payload?: any
+}
+
 export const getHighlightOperation: (url: string) => Promise<HighlightOperation[]> = (url: string) => {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(url, (item) => {
@@ -167,7 +172,11 @@ const showDeleteButton = (element: HTMLElement, id: string) => {
       button.style.height = '16px'
       button.style.border = '1px solid'
       button.style.borderRadius = '8px'
-      button.onclick = (event: MouseEvent) => {removeHighlight(id); button.remove()}
+      button.onclick = (event: MouseEvent) => {
+        removeHighlight(id)
+        button.remove()
+        chrome.runtime.sendMessage({id: 'delete-highlight', payload: id})
+      }
       startNode.appendChild(button)
     }
 
