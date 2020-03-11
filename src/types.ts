@@ -17,19 +17,18 @@ export interface HighlightInfo {
   rangeIndex: RangeIndex
 }
 
-const HighlightNodeFilter: NodeFilter = {
-  acceptNode(node: Node): number {
-    const parentElement = node.parentElement
-    if (parentElement && parentElement.classList.contains('awesome-highlighter-rendered')) {
-      return 0
-    } else {
-      return 1
-    }
-  }
+export interface HighlightOperation {
+  id: string
+  ops: 'create' | 'delete'
+  info?: HighlightInfo
 }
 
+export interface Message {
+  id: string
+  payload?: any
+}
 
-export const getHighlightInfo: (url: string) => Promise<HighlightInfo[]> = (url: string) => {
+export const getHighlightOperation: (url: string) => Promise<HighlightOperation[]> = (url: string) => {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(url, (item) => {
       if (chrome.runtime.lastError) {
@@ -43,10 +42,10 @@ export const getHighlightInfo: (url: string) => Promise<HighlightInfo[]> = (url:
   })
 }
 
-export const saveHighlightInfo: (url: string, infos: HighlightInfo[]) => Promise<void> = (url: string, infos: HighlightInfo[]) => {
+export const saveHighlightOperation: (url: string, ops: HighlightOperation[]) => Promise<void> = (url: string, ops: HighlightOperation[]) => {
   return new Promise((resolve, reject) => {
-    const obj: {[key: string]: HighlightInfo[];} = {}
-    obj[url] = infos
+    const obj: {[key: string]: HighlightOperation[];} = {}
+    obj[url] = ops
     chrome.storage.local.set(obj, () => {
       if (chrome.runtime.lastError) {
         reject(`error when set highlight_information, error is ${chrome.runtime.lastError.toString()}`)
@@ -147,51 +146,114 @@ export const recoverRange = (rangeIndex: RangeIndex) => {
   }
 }
 
-export const recoverHighlight = (highlightInfos: HighlightInfo[]) => {
-  highlightInfos.forEach(info => {
-    const range = recoverRange(info.rangeIndex)
-    console.log('range:' + info.id)
-    console.log(range)
-    if (range) {
-      highlightRange(range, info.id)
-    }
-  })
+export const recoverHighlight = (id: string, info: HighlightInfo) => {
+  const range = recoverRange(info.rangeIndex)
+  console.log('range:' + id)
+  console.log(range)
+  if (range) {
+    highlightRange(range, id)
+  }
 }
 
-export const markNode = (node: Text, className: string, id: string) => {
+const showDeleteButton = (element: HTMLElement, id: string) => {
+  return (event: MouseEvent) => {
+
+    const startNode = document.getElementsByClassName(`awesome-highlighter-${id}-starter`).item(0)
+    if (startNode) {
+      const button = document.createElement('button')
+      button.classList.add(`awesome-highlighter-button-${id}`)
+      button.classList.add('ssh-cross')
+
+      const clientRect = startNode.getBoundingClientRect()
+      button.style.position = 'absolute'
+      button.style.left = `${clientRect.left + window.scrollX - 8}px`
+      button.style.top = `${clientRect.top + window.scrollY - 8}px`
+      button.style.width = '16px'
+      button.style.height = '16px'
+      button.style.border = '1px solid'
+      button.style.borderRadius = '8px'
+      button.onclick = (event: MouseEvent) => {
+        removeHighlight(id)
+        button.remove()
+        chrome.runtime.sendMessage({id: 'delete-highlight', payload: id})
+      }
+      startNode.appendChild(button)
+    }
+
+
+    return true as any
+  }
+}
+
+const removeDeleteButton = (element: HTMLElement, id: string) => {
+  return (event: MouseEvent) => {
+    console.log('leave mark')
+    const buttons = document.getElementsByClassName(`awesome-highlighter-button-${id}`)
+    while (buttons.length > 0) {
+      buttons[0].remove()
+    }
+    return true as any
+  }
+}
+
+const removeHighlight = (id: string) => {
+  console.log('removing highlight: ' + id)
+  const nodes = document.getElementsByClassName(`awesome-highlighter-${id}`)
+  console.log(nodes)
+
+  for (let index = 0; index < nodes.length; index++) {
+    unrenderNode(nodes[index], id)
+  }
+
+  while (nodes.length > 0) {
+    nodes[0].remove()
+  }
+}
+
+export const renderNode = (node: Text, id: string, isStarter: boolean) => {
   const parentNode = node.parentNode
   if (parentNode) {
     const mark = document.createElement('mark')
-    mark.classList.add(className)
-    mark.style.backgroundColor = 'yellow'
+    mark.classList.add(`awesome-highlighter-${id}`)
+    isStarter && mark.classList.add(`awesome-highlighter-${id}-starter`)
     mark.setAttribute('data-highlight-id', id)
+    mark.style.backgroundColor = 'yellow'
     mark.appendChild(node.cloneNode())
+    mark.onmouseenter = showDeleteButton(mark, id)
+    mark.onmouseleave = removeDeleteButton(mark, id)
     parentNode.replaceChild(mark, node)
   }
 }
 
-export const unmarkNode = (node: HTMLElement) => {
-  if (node.tagName === 'mark' && node.getAttribute('data-highlight-id')) {
+export const unrenderNode = (node: Element, id: string) => {
+  if (node.tagName.toUpperCase() === 'MARK' && node.getAttribute('data-highlight-id') === id) {
+    console.log('unrendering')
+    console.log(node)
     const parentNode = node.parentNode
     if (parentNode) {
-      const childNodes = node.childNodes
-      if (childNodes.length > 0) {
-        childNodes.forEach(c => {
-          parentNode.insertBefore(c, node)
-        })
-        parentNode.removeChild(node)
+      while (node.firstChild) {
+        parentNode.insertBefore(node.firstChild, node)
       }
+      console.log('unrendered')
     }
   }
 }
 
-export const splitIfNecessary = (node: Text, range: Range) => {
+export const replayOptions = (opsList: HighlightOperation[]) => {
+  opsList.forEach(o => {
+    if (o.ops === "create") {
+      if (o.info) {
+        recoverHighlight(o.id, o.info)
+      }
+    } else {
+      removeHighlight(o.id)
+    }
+  })
+}
+
+export const highlightNode = (node: Text, id: string, range: Range) => {
   let isStartNode: boolean = node.isSameNode(range.startContainer)
   let isEndNode: boolean = node.isSameNode(range.endContainer)
-
-  console.log('split_if_necessary')
-
-  console.log(node)
 
   if (isStartNode && isEndNode) {
     // -----------------
@@ -199,36 +261,30 @@ export const splitIfNecessary = (node: Text, range: Range) => {
     //      |      |
     // first second thrid
 
-    console.log('same start and end')
     const first = node
     const second = first.splitText(range.startOffset)
     const third = second.splitText(range.endOffset)
-    return second
+    renderNode(second, id, true)
   } else if (isStartNode) {
     // -----------------
     //     start
     //      |
     // first second
 
-    console.log('start')
     const first = node
     const second = first.splitText(range.startOffset)
-    return second
+    renderNode(second, id, true)
   } else if (isEndNode) {
     // -----------------
     //     end
     //      |
     // first second
 
-    console.log('end')
-
     const first = node
     const second = first.splitText(range.endOffset)
-    return first
+    renderNode(first, id, false)
   } else {
-    console.log('inner')
-
-    return node
+    renderNode(node, id, false)
   }
 }
 
@@ -253,9 +309,8 @@ export const highlightRange = (range: Range, id: string) => {
   console.log(textNodes)
   for (let index = 0; index < textNodes.length; index++) {
     const currentNode = textNodes[index];
-    const splitedNode: Text = splitIfNecessary(currentNode, range)
-    if (splitedNode.textContent && splitedNode.textContent.trim().length > 0) {
-      markNode(splitedNode, 'awesome-highlighter', id)
+    if (currentNode.textContent && currentNode.textContent.trim().length > 0) {
+      highlightNode(currentNode, id, range)
     }
   }
 }

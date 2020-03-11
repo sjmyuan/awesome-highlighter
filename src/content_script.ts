@@ -1,27 +1,29 @@
-import {highlightSelection, recoverHighlight, HighlightInfo} from './types'
+import {highlightSelection, replayOptions, HighlightOperation, HighlightInfo, Message} from './types'
 
-let allHighlightInfos: HighlightInfo[] = []
-
-const onExtensionMessage = (request: any, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
+const onExtensionMessage = (request: Message, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
   console.log('receive message')
   console.log(request)
-  if (request === 'get_highlight_info') {
-    const highlightInfos = highlightSelection()
-    allHighlightInfos = allHighlightInfos.concat(highlightInfos)
-    console.log('return highlight information')
-    console.log(allHighlightInfos)
-    sendResponse({highlightInfos: allHighlightInfos});
+  if (request.id === 'get_new_highlight_operations') {
+    const highlightInfos: HighlightInfo[] = highlightSelection()
+    const highlightOperations: HighlightOperation[] = highlightInfos.map(info => ({
+      id: info.id,
+      ops: 'create',
+      info: info
+    }))
+
+    console.log('return highlight operations')
+    console.log(highlightOperations)
+    sendResponse({highlightOperations: highlightOperations});
   }
 }
 
 const initContentScript: () => void = () => {
   console.log('loading script')
   chrome.runtime.onMessage.addListener(onExtensionMessage)
-  chrome.runtime.sendMessage('fetch_historical_highlight_info', (highlightInfos: HighlightInfo[]) => {
+  chrome.runtime.sendMessage({id: 'fetch_all_highlight_operations'}, (highlightOperations: HighlightOperation[]) => {
     console.log('recovering highlight infos')
-    console.log(highlightInfos)
-    allHighlightInfos = highlightInfos
-    recoverHighlight(highlightInfos)
+    console.log(highlightOperations)
+    replayOptions(highlightOperations)
   })
 }
 
