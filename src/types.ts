@@ -17,19 +17,13 @@ export interface HighlightInfo {
   rangeIndex: RangeIndex
 }
 
-const HighlightNodeFilter: NodeFilter = {
-  acceptNode(node: Node): number {
-    const parentElement = node.parentElement
-    if (parentElement && parentElement.classList.contains('awesome-highlighter-rendered')) {
-      return 0
-    } else {
-      return 1
-    }
-  }
+export interface HighlightOperation {
+  id: string
+  ops: 'create' | 'delete'
+  info?: HighlightInfo
 }
 
-
-export const getHighlightInfo: (url: string) => Promise<HighlightInfo[]> = (url: string) => {
+export const getHighlightOperation: (url: string) => Promise<HighlightOperation[]> = (url: string) => {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(url, (item) => {
       if (chrome.runtime.lastError) {
@@ -43,10 +37,10 @@ export const getHighlightInfo: (url: string) => Promise<HighlightInfo[]> = (url:
   })
 }
 
-export const saveHighlightInfo: (url: string, infos: HighlightInfo[]) => Promise<void> = (url: string, infos: HighlightInfo[]) => {
+export const saveHighlightOperation: (url: string, ops: HighlightOperation[]) => Promise<void> = (url: string, ops: HighlightOperation[]) => {
   return new Promise((resolve, reject) => {
-    const obj: {[key: string]: HighlightInfo[];} = {}
-    obj[url] = infos
+    const obj: {[key: string]: HighlightOperation[];} = {}
+    obj[url] = ops
     chrome.storage.local.set(obj, () => {
       if (chrome.runtime.lastError) {
         reject(`error when set highlight_information, error is ${chrome.runtime.lastError.toString()}`)
@@ -147,30 +141,27 @@ export const recoverRange = (rangeIndex: RangeIndex) => {
   }
 }
 
-export const recoverHighlight = (highlightInfos: HighlightInfo[]) => {
-  highlightInfos.forEach(info => {
-    const range = recoverRange(info.rangeIndex)
-    console.log('range:' + info.id)
-    console.log(range)
-    if (range) {
-      highlightRange(range, info.id)
-    }
-  })
+export const recoverHighlight = (id: string, info: HighlightInfo) => {
+  const range = recoverRange(info.rangeIndex)
+  console.log('range:' + id)
+  console.log(range)
+  if (range) {
+    highlightRange(range, id)
+  }
 }
 
-export const markNode = (node: Text, className: string, id: string) => {
+export const markNode = (node: Text, id: string) => {
   const parentNode = node.parentNode
   if (parentNode) {
     const mark = document.createElement('mark')
-    mark.classList.add(className)
+    mark.classList.add(`awesome-highlighter-${id}`)
     mark.style.backgroundColor = 'yellow'
-    mark.setAttribute('data-highlight-id', id)
     mark.appendChild(node.cloneNode())
     parentNode.replaceChild(mark, node)
   }
 }
 
-export const unmarkNode = (node: HTMLElement) => {
+export const unmarkNode = (node: Element) => {
   if (node.tagName === 'mark' && node.getAttribute('data-highlight-id')) {
     const parentNode = node.parentNode
     if (parentNode) {
@@ -181,6 +172,29 @@ export const unmarkNode = (node: HTMLElement) => {
         })
         parentNode.removeChild(node)
       }
+    }
+  }
+}
+
+export const replayOptions = (opsList: HighlightOperation[]) => {
+  opsList.forEach(o => {
+    if (o.ops === "create") {
+      if (o.info) {
+        recoverHighlight(o.id, o.info)
+      }
+    } else {
+      deleteHighlight(o.id)
+    }
+  })
+}
+
+export const deleteHighlight = (id: string) => {
+  const nodes = document.getElementsByClassName(`awesome-highlighter-${id}`)
+
+  for (let index = 0; index < nodes.length; index++) {
+    const node = nodes.item(index)
+    if (node) {
+      unmarkNode(node)
     }
   }
 }
@@ -255,7 +269,7 @@ export const highlightRange = (range: Range, id: string) => {
     const currentNode = textNodes[index];
     const splitedNode: Text = splitIfNecessary(currentNode, range)
     if (splitedNode.textContent && splitedNode.textContent.trim().length > 0) {
-      markNode(splitedNode, 'awesome-highlighter', id)
+      markNode(splitedNode, id)
     }
   }
 }

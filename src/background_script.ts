@@ -1,12 +1,12 @@
-import {HighlightInfo, saveHighlightInfo, getHighlightInfo} from "./types"
+import {HighlightInfo, saveHighlightOperation, getHighlightOperation, HighlightOperation} from "./types"
 
 const getHighlightInfoFromTab = (tab: chrome.tabs.Tab) => {
   console.log('Send message to get highlightInfos')
   console.log(tab)
   if (tab.id && tab.url) {
-    chrome.tabs.sendMessage(tab.id, 'get_highlight_info', (message: {highlightInfos: HighlightInfo[]}) => {
+    chrome.tabs.sendMessage(tab.id, 'get_new_highlight_operations', (message: {highlightOperations: HighlightOperation[]}) => {
       console.log(message)
-      saveHighlightInfo(tab.url as string, message.highlightInfos)
+      saveHighlightOperation(tab.url as string, message.highlightOperations)
     })
   }
 }
@@ -15,11 +15,11 @@ const onMessageReceived = (message: any,
   sender: chrome.runtime.MessageSender,
   sendResponse: (response?: any) => void) => {
 
-  if (message === 'fetch_historical_highlight_info' && sender.url) {
-    getHighlightInfo(sender.url).then(historicalHighlightInfos => {
-      console.log('send back historical highlight info')
-      console.log(historicalHighlightInfos)
-      sendResponse(historicalHighlightInfos)
+  if (message === 'fetch_all_highlight_operations' && sender.url) {
+    getHighlightOperation(sender.url).then(highlightOperations => {
+      console.log('send back all highlight operations')
+      console.log(highlightOperations)
+      sendResponse(highlightOperations)
     })
   }
 
