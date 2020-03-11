@@ -150,6 +150,38 @@ export const recoverHighlight = (id: string, info: HighlightInfo) => {
   }
 }
 
+const showDeleteButton = (element: HTMLElement, id: string) => {
+  return (event: MouseEvent) => {
+    console.log('enter mark')
+    const button = document.createElement('button')
+    button.classList.add(`awesome-highlighter-button-${id}`)
+    button.classList.add('ssh-cross')
+    button.style.position = 'absolute'
+    button.style.left = `${element.getBoundingClientRect().left}px`
+    button.style.top = `${element.getBoundingClientRect().top}px`
+    button.style.width = '20px'
+    button.style.height = '20px'
+    button.style.border = '1px solid'
+    button.style.borderRadius = '10px'
+    element.appendChild(button)
+    return true as any
+  }
+}
+
+const removeDeleteButton = (element: HTMLElement, id: string) => {
+  return (event: MouseEvent) => {
+    console.log('leave mark')
+    const buttons = element.getElementsByClassName(`awesome-highlighter-button-${id}`)
+    for (let index = 0; index < buttons.length; index++) {
+      const button = buttons.item(index)
+      if (button) {
+        element.removeChild(button)
+      }
+    }
+    return true as any
+  }
+}
+
 export const markNode = (node: Text, id: string) => {
   const parentNode = node.parentNode
   if (parentNode) {
@@ -157,6 +189,8 @@ export const markNode = (node: Text, id: string) => {
     mark.classList.add(`awesome-highlighter-${id}`)
     mark.style.backgroundColor = 'yellow'
     mark.appendChild(node.cloneNode())
+    mark.onmouseenter = showDeleteButton(mark, id)
+    mark.onmouseleave = removeDeleteButton(mark, id)
     parentNode.replaceChild(mark, node)
   }
 }
@@ -202,10 +236,6 @@ export const deleteHighlight = (id: string) => {
 export const splitIfNecessary = (node: Text, range: Range) => {
   let isStartNode: boolean = node.isSameNode(range.startContainer)
   let isEndNode: boolean = node.isSameNode(range.endContainer)
-
-  console.log('split_if_necessary')
-
-  console.log(node)
 
   if (isStartNode && isEndNode) {
     // -----------------
