@@ -152,18 +152,26 @@ export const recoverHighlight = (id: string, info: HighlightInfo) => {
 
 const showDeleteButton = (element: HTMLElement, id: string) => {
   return (event: MouseEvent) => {
-    console.log('enter mark')
-    const button = document.createElement('button')
-    button.classList.add(`awesome-highlighter-button-${id}`)
-    button.classList.add('ssh-cross')
-    button.style.position = 'absolute'
-    button.style.left = `${element.getBoundingClientRect().left}px`
-    button.style.top = `${element.getBoundingClientRect().top}px`
-    button.style.width = '20px'
-    button.style.height = '20px'
-    button.style.border = '1px solid'
-    button.style.borderRadius = '10px'
-    element.appendChild(button)
+
+    const startNode = document.getElementsByClassName(`awesome-highlighter-${id}-starter`).item(0)
+    if (startNode) {
+      const button = document.createElement('button')
+      button.classList.add(`awesome-highlighter-button-${id}`)
+      button.classList.add('ssh-cross')
+
+      const clientRect = startNode.getBoundingClientRect()
+      button.style.position = 'absolute'
+      button.style.left = `${clientRect.left + window.scrollX - 8}px`
+      button.style.top = `${clientRect.top + window.scrollY - 8}px`
+      button.style.width = '16px'
+      button.style.height = '16px'
+      button.style.border = '1px solid'
+      button.style.borderRadius = '8px'
+      button.onclick = (event: MouseEvent) => {removeHighlight(id); button.remove()}
+      startNode.appendChild(button)
+    }
+
+
     return true as any
   }
 }
@@ -171,22 +179,35 @@ const showDeleteButton = (element: HTMLElement, id: string) => {
 const removeDeleteButton = (element: HTMLElement, id: string) => {
   return (event: MouseEvent) => {
     console.log('leave mark')
-    const buttons = element.getElementsByClassName(`awesome-highlighter-button-${id}`)
-    for (let index = 0; index < buttons.length; index++) {
-      const button = buttons.item(index)
-      if (button) {
-        element.removeChild(button)
-      }
+    const buttons = document.getElementsByClassName(`awesome-highlighter-button-${id}`)
+    while (buttons.length > 0) {
+      buttons[0].remove()
     }
     return true as any
   }
 }
 
-export const markNode = (node: Text, id: string) => {
+const removeHighlight = (id: string) => {
+  console.log('removing highlight: ' + id)
+  const nodes = document.getElementsByClassName(`awesome-highlighter-${id}`)
+  console.log(nodes)
+
+  for (let index = 0; index < nodes.length; index++) {
+    unrenderNode(nodes[index], id)
+  }
+
+  while (nodes.length > 0) {
+    nodes[0].remove()
+  }
+}
+
+export const renderNode = (node: Text, id: string, isStarter: boolean) => {
   const parentNode = node.parentNode
   if (parentNode) {
     const mark = document.createElement('mark')
     mark.classList.add(`awesome-highlighter-${id}`)
+    isStarter && mark.classList.add(`awesome-highlighter-${id}-starter`)
+    mark.setAttribute('data-highlight-id', id)
     mark.style.backgroundColor = 'yellow'
     mark.appendChild(node.cloneNode())
     mark.onmouseenter = showDeleteButton(mark, id)
@@ -195,17 +216,16 @@ export const markNode = (node: Text, id: string) => {
   }
 }
 
-export const unmarkNode = (node: Element) => {
-  if (node.tagName === 'mark' && node.getAttribute('data-highlight-id')) {
+export const unrenderNode = (node: Element, id: string) => {
+  if (node.tagName.toUpperCase() === 'MARK' && node.getAttribute('data-highlight-id') === id) {
+    console.log('unrendering')
+    console.log(node)
     const parentNode = node.parentNode
     if (parentNode) {
-      const childNodes = node.childNodes
-      if (childNodes.length > 0) {
-        childNodes.forEach(c => {
-          parentNode.insertBefore(c, node)
-        })
-        parentNode.removeChild(node)
+      while (node.firstChild) {
+        parentNode.insertBefore(node.firstChild, node)
       }
+      console.log('unrendered')
     }
   }
 }
@@ -217,23 +237,12 @@ export const replayOptions = (opsList: HighlightOperation[]) => {
         recoverHighlight(o.id, o.info)
       }
     } else {
-      deleteHighlight(o.id)
+      removeHighlight(o.id)
     }
   })
 }
 
-export const deleteHighlight = (id: string) => {
-  const nodes = document.getElementsByClassName(`awesome-highlighter-${id}`)
-
-  for (let index = 0; index < nodes.length; index++) {
-    const node = nodes.item(index)
-    if (node) {
-      unmarkNode(node)
-    }
-  }
-}
-
-export const splitIfNecessary = (node: Text, range: Range) => {
+export const highlightNode = (node: Text, id: string, range: Range) => {
   let isStartNode: boolean = node.isSameNode(range.startContainer)
   let isEndNode: boolean = node.isSameNode(range.endContainer)
 
@@ -243,36 +252,30 @@ export const splitIfNecessary = (node: Text, range: Range) => {
     //      |      |
     // first second thrid
 
-    console.log('same start and end')
     const first = node
     const second = first.splitText(range.startOffset)
     const third = second.splitText(range.endOffset)
-    return second
+    renderNode(second, id, true)
   } else if (isStartNode) {
     // -----------------
     //     start
     //      |
     // first second
 
-    console.log('start')
     const first = node
     const second = first.splitText(range.startOffset)
-    return second
+    renderNode(second, id, true)
   } else if (isEndNode) {
     // -----------------
     //     end
     //      |
     // first second
 
-    console.log('end')
-
     const first = node
     const second = first.splitText(range.endOffset)
-    return first
+    renderNode(first, id, false)
   } else {
-    console.log('inner')
-
-    return node
+    renderNode(node, id, false)
   }
 }
 
@@ -297,9 +300,8 @@ export const highlightRange = (range: Range, id: string) => {
   console.log(textNodes)
   for (let index = 0; index < textNodes.length; index++) {
     const currentNode = textNodes[index];
-    const splitedNode: Text = splitIfNecessary(currentNode, range)
-    if (splitedNode.textContent && splitedNode.textContent.trim().length > 0) {
-      markNode(splitedNode, id)
+    if (currentNode.textContent && currentNode.textContent.trim().length > 0) {
+      highlightNode(currentNode, id, range)
     }
   }
 }
