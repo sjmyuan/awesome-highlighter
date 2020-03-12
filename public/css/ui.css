@@ -3,9 +3,13 @@
   height: 16px;
   width: 16px;
   border: 1px solid;
-  border-radius: 8px;
+  border-radius: 9px;
   opacity: 0.3;
-  background-color: gray;
+  background-color: lightgray;
+  padding: 0px;
+  box-sizing: unset;
+
+  transition: opacity 0.33s linear;
 }
 .awesome-highlighter-button:before, .awesome-highlighter-button:after {
   position: absolute;
@@ -13,7 +17,7 @@
   top: 4px;
   content: " ";
   height: 8px;
-  width: 1px;
+  width: 2px;
   background-color: #333;
 }
 .awesome-highlighter-button:hover::before, .awesome-highlighter-button:hover::after {
@@ -28,5 +32,22 @@
 .awesome-highlighter-button:hover{
   opacity: 1;
   background-color: #b94a48;
-  border: 1px transparent;
+  border: 1px solid;
+  cursor: pointer;
 }
+
+.awesome-highlighter-red {
+  background-color: #b8453d;
+  box-shadow: 0px 0px 13px 0px rgba(171,65,32,1);
+}
+
+.awesome-highlighter-yellow {
+  background-color: #e8d615;
+  box-shadow: 0px 0px 13px 0px rgba(199,188,64,1);
+}
+
+.awesome-highlighter-blue {
+  background-color: #3f3bb8;
+  box-shadow: 0px 0px 13px 0px rgba(32,55,171,1);
+}
+
