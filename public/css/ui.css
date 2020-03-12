@@ -1,0 +1,32 @@
+.awesome-highlighter-button{
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  border: 1px solid;
+  border-radius: 8px;
+  opacity: 0.3;
+  background-color: gray;
+}
+.awesome-highlighter-button:before, .awesome-highlighter-button:after {
+  position: absolute;
+  left: 7px;
+  top: 4px;
+  content: " ";
+  height: 8px;
+  width: 1px;
+  background-color: #333;
+}
+.awesome-highlighter-button:hover::before, .awesome-highlighter-button:hover::after {
+  background-color: white;
+}
+.awesome-highlighter-button:before {
+  transform: rotate(45deg);
+}
+.awesome-highlighter-button:after{
+  transform: rotate(-45deg);
+}
+.awesome-highlighter-button:hover{
+  opacity: 1;
+  background-color: #b94a48;
+  border: 1px transparent;
+}

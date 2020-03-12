@@ -26,6 +26,9 @@
       "all_frames": false,
       "js": [
         "/js/content_script.bundle.js"
+      ],
+      "css": [
+        "/css/ui.css"
       ]
     }
   ],

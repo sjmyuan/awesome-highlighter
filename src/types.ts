@@ -1,4 +1,5 @@
 import {v4 as uuidv4} from 'uuid';
+import {createButton} from './ui';
 
 export interface RangeIndex {
   startNodeIndex: number,
@@ -157,21 +158,10 @@ export const recoverHighlight = (id: string, info: HighlightInfo) => {
 
 const showDeleteButton = (element: HTMLElement, id: string) => {
   return (event: MouseEvent) => {
-
     const startNode = document.getElementsByClassName(`awesome-highlighter-${id}-starter`).item(0)
     if (startNode) {
-      const button = document.createElement('button')
-      button.classList.add(`awesome-highlighter-button-${id}`)
-      button.classList.add('ssh-cross')
-
-      const clientRect = startNode.getBoundingClientRect()
-      button.style.position = 'absolute'
-      button.style.left = `${clientRect.left + window.scrollX - 8}px`
-      button.style.top = `${clientRect.top + window.scrollY - 8}px`
-      button.style.width = '16px'
-      button.style.height = '16px'
-      button.style.border = '1px solid'
-      button.style.borderRadius = '8px'
+      const clientRect = startNode.getClientRects()[0]
+      const button = createButton(clientRect.left + window.scrollX - 8, clientRect.top + window.scrollY - 8)
       button.onclick = (event: MouseEvent) => {
         removeHighlight(id)
         button.remove()
@@ -185,10 +175,9 @@ const showDeleteButton = (element: HTMLElement, id: string) => {
   }
 }
 
-const removeDeleteButton = (element: HTMLElement, id: string) => {
+const removeDeleteButton = (element: HTMLElement) => {
   return (event: MouseEvent) => {
-    console.log('leave mark')
-    const buttons = document.getElementsByClassName(`awesome-highlighter-button-${id}`)
+    const buttons = document.getElementsByClassName(`awesome-highlighter-button`)
     while (buttons.length > 0) {
       buttons[0].remove()
     }
@@ -220,7 +209,7 @@ export const renderNode = (node: Text, id: string, isStarter: boolean) => {
     mark.style.backgroundColor = 'yellow'
     mark.appendChild(node.cloneNode())
     mark.onmouseenter = showDeleteButton(mark, id)
-    mark.onmouseleave = removeDeleteButton(mark, id)
+    mark.onmouseleave = removeDeleteButton(mark)
     parentNode.replaceChild(mark, node)
   }
 }
