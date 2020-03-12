@@ -1,4 +1,5 @@
 import {v4 as uuidv4} from 'uuid';
+import {removeHighlight, renderNode} from './ui'
 
 export interface RangeIndex {
   startNodeIndex: number,
@@ -152,90 +153,6 @@ export const recoverHighlight = (id: string, info: HighlightInfo) => {
   console.log(range)
   if (range) {
     highlightRange(range, id)
-  }
-}
-
-const showDeleteButton = (element: HTMLElement, id: string) => {
-  return (event: MouseEvent) => {
-
-    const startNode = document.getElementsByClassName(`awesome-highlighter-${id}-starter`).item(0)
-    if (startNode) {
-      const button = document.createElement('button')
-      button.classList.add(`awesome-highlighter-button-${id}`)
-      button.classList.add('ssh-cross')
-
-      const clientRect = startNode.getBoundingClientRect()
-      button.style.position = 'absolute'
-      button.style.left = `${clientRect.left + window.scrollX - 8}px`
-      button.style.top = `${clientRect.top + window.scrollY - 8}px`
-      button.style.width = '16px'
-      button.style.height = '16px'
-      button.style.border = '1px solid'
-      button.style.borderRadius = '8px'
-      button.onclick = (event: MouseEvent) => {
-        removeHighlight(id)
-        button.remove()
-        chrome.runtime.sendMessage({id: 'delete-highlight', payload: id})
-      }
-      startNode.appendChild(button)
-    }
-
-
-    return true as any
-  }
-}
-
-const removeDeleteButton = (element: HTMLElement, id: string) => {
-  return (event: MouseEvent) => {
-    console.log('leave mark')
-    const buttons = document.getElementsByClassName(`awesome-highlighter-button-${id}`)
-    while (buttons.length > 0) {
-      buttons[0].remove()
-    }
-    return true as any
-  }
-}
-
-const removeHighlight = (id: string) => {
-  console.log('removing highlight: ' + id)
-  const nodes = document.getElementsByClassName(`awesome-highlighter-${id}`)
-  console.log(nodes)
-
-  for (let index = 0; index < nodes.length; index++) {
-    unrenderNode(nodes[index], id)
-  }
-
-  while (nodes.length > 0) {
-    nodes[0].remove()
-  }
-}
-
-export const renderNode = (node: Text, id: string, isStarter: boolean) => {
-  const parentNode = node.parentNode
-  if (parentNode) {
-    const mark = document.createElement('mark')
-    mark.classList.add(`awesome-highlighter-${id}`)
-    isStarter && mark.classList.add(`awesome-highlighter-${id}-starter`)
-    mark.setAttribute('data-highlight-id', id)
-    mark.style.backgroundColor = 'yellow'
-    mark.appendChild(node.cloneNode())
-    mark.onmouseenter = showDeleteButton(mark, id)
-    mark.onmouseleave = removeDeleteButton(mark, id)
-    parentNode.replaceChild(mark, node)
-  }
-}
-
-export const unrenderNode = (node: Element, id: string) => {
-  if (node.tagName.toUpperCase() === 'MARK' && node.getAttribute('data-highlight-id') === id) {
-    console.log('unrendering')
-    console.log(node)
-    const parentNode = node.parentNode
-    if (parentNode) {
-      while (node.firstChild) {
-        parentNode.insertBefore(node.firstChild, node)
-      }
-      console.log('unrendered')
-    }
   }
 }
 
