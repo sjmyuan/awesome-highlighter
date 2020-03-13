@@ -6,6 +6,7 @@ module.exports = {
     extensions: ['.ts', '.tsx', '.js']
   },
   entry: {
+    popup: [path.join(__dirname, 'src/popup')],
     content_script: [path.join(__dirname, 'src/content_script')],
     background_script: [path.join(__dirname, 'src/background_script')],
   },
