@@ -13,6 +13,7 @@ const Body = styled.div`
     justify-content: center;
     `
 const Content = styled.div`
+    max-width: 1000px;
     width: 60%
 `
 interface AppState {
