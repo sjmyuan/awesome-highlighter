@@ -29,6 +29,12 @@ export interface Message {
   payload?: any
 }
 
+export interface HighlightStyleInfo {
+  backgroundColor: string
+  fontColor: string
+  label: string
+}
+
 export const getHighlightOperation: (url: string) => Promise<HighlightOperation[]> = (url: string) => {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(url, (item) => {

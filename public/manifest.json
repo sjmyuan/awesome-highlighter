@@ -12,6 +12,7 @@
     "default_title": "Highlight The Selected Text",
     "default_popup": "popup.html"
   },
+  "options_page": "options.html",
   "background": {
     "scripts": [
       "js/background_script.bundle.js"

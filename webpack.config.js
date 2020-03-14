@@ -7,6 +7,7 @@ module.exports = {
   },
   entry: {
     popup: [path.join(__dirname, 'src/popup')],
+    options: [path.join(__dirname, 'src/options')],
     content_script: [path.join(__dirname, 'src/content_script')],
     background_script: [path.join(__dirname, 'src/background_script')],
   },
