@@ -4,8 +4,8 @@
   "manifest_version": 2,
   "description": "Highlight your selected text",
   "icons": {
-    "16": "img/icon-16.png",
-    "48": "img/icon-48.png",
+    "32": "img/icon-32.png",
+    "64": "img/icon-64.png",
     "128": "img/icon-128.png"
   },
   "browser_action": {
