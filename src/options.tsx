@@ -25,14 +25,18 @@ const App: React.FC = () => {
   useEffect(() => {
     setState({
       styles: [{
+        id: '1',
         label: 'Red',
         backgroundColor: 'red',
-        fontColor: 'black'
+        fontColor: 'black',
+        opacity: 1
       },
       {
+        id: '2',
         label: 'Yellow',
         backgroundColor: 'yellow',
-        fontColor: 'black'
+        fontColor: 'black',
+        opacity: 1
       }]
     })
   }, [])
@@ -40,7 +44,17 @@ const App: React.FC = () => {
   return (<Body>
     <Content>
       <OptionItem title="Highlight Style">
-        <HighlightStyleCollection styles={state.styles} />
+        <HighlightStyleCollection styles={state.styles} onChange={(style: HighlightStyleInfo) => {
+          const newStyles = state.styles.reduce<HighlightStyleInfo[]>((acc, e) => {
+            if (e.id === style.id) {
+              return [...acc, style]
+            } else {
+              return [...acc, e]
+            }
+          }, [])
+
+          setState({styles: newStyles})
+        }} />
       </OptionItem>
     </Content>
   </Body>

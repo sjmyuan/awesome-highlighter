@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import {HighlightStyleInfo} from '../types'
 import Slider from 'rc-slider'
 import ColorButton from './ColorButton'
+import 'rc-slider/assets/index.css';
 
 const Div = styled.div`
 width: auto;
@@ -23,6 +24,15 @@ min-width: 200px;
 border-bottom: 1px dashed;
 padding: 16px 0px;
 `
+const SliderDiv = styled.div`
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+align-items: flex-start;
+min-width: 200px;
+border-bottom: 1px dashed;
+padding: 16px 0px;
+`
 
 const Label = styled.label`
 color: darkgray;
@@ -30,6 +40,7 @@ color: darkgray;
 
 interface HighlightStyleEditorProps {
   style: HighlightStyleInfo;
+  onChange: (style: HighlightStyleInfo) => void
 }
 
 interface HighlightStyleEditorState {
@@ -45,6 +56,7 @@ const HighlightStyleEditor = (props: HighlightStyleEditorProps) => {
         setState({
           style: {...state.style, backgroundColor: color}
         })
+        props.onChange(state.style)
       }} />
     </ButtonDiv>
     <ButtonDiv>
@@ -53,12 +65,18 @@ const HighlightStyleEditor = (props: HighlightStyleEditorProps) => {
         setState({
           style: {...state.style, fontColor: color}
         })
+        props.onChange(state.style)
       }} />
     </ButtonDiv>
-    <ButtonDiv>
+    <SliderDiv>
       <Label>Opacity</Label>
-      <Slider min={0} max={100} value={100} onChange={(v) => console.log(v)} />
-    </ButtonDiv>
+      <Slider min={0} max={100} value={state.style.opacity * 100} onChange={(v) => {
+        setState({
+          style: {...state.style, opacity: v / 100}
+        })
+        props.onChange(state.style)
+      }} />
+    </SliderDiv>
   </Div>);
 }
 

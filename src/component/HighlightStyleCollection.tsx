@@ -18,13 +18,14 @@ margin-bottom: 16px;
 
 interface HighlightStyleCollectionProps {
   styles: HighlightStyleInfo[];
+  onChange: (style: HighlightStyleInfo) => void;
 }
 
 const HighlightStyleCollection = (props: HighlightStyleCollectionProps) => {
   return (<Ul>{props.styles.map(s => (
     <Li>
       <HighlightStyle style={s} />
-      <HighlightStyleEditor style={s} />
+      <HighlightStyleEditor style={s} onChange={props.onChange} />
     </Li>
   ))}</Ul>);
 }

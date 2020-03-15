@@ -30,8 +30,10 @@ export interface Message {
 }
 
 export interface HighlightStyleInfo {
+  id: string
   backgroundColor: string
   fontColor: string
+  opacity: number
   label: string
 }
 

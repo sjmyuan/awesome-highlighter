@@ -11,6 +11,7 @@ padding: 1rem 1.5rem;
 font-size: large;
 background-color:${props => props.style.backgroundColor};
 font-color:${props => props.style.fontColor};
+opacity: ${props => props.style.opacity}
 border: 2px solid;
 display: flex;
 flex-direction: row;
