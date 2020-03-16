@@ -27,19 +27,18 @@ const PickerDiv = styled.div<{show: boolean, top: number}>`
  `
 
 interface ColorButtonProps {
-  getColor: (style: HighlightStyleInfo) => string
-  setColor: (style: HighlightStyleInfo, color: string) => HighlightStyleInfo
-  styleId: string
+  color: string
+  onChange: (color: string) => void
 }
 
 interface ColorButtonState {
+  color: string
   showPicker: boolean
   pickerPosition: number
 }
 const ColorButton = (props: ColorButtonProps) => {
 
-  const [state, setState] = useState<ColorButtonState>({showPicker: false, pickerPosition: 0})
-  const context = useContext(OptionAppContext)
+  const [state, setState] = useState<ColorButtonState>({color: props.color, showPicker: false, pickerPosition: 0})
   let buttonElement = React.createRef<HTMLButtonElement>();
   let pickerElement = React.createRef<HTMLDivElement>();
 
@@ -66,25 +65,21 @@ const ColorButton = (props: ColorButtonProps) => {
     };
   }, [handleMouseDown])
 
-  const style = context.state.styles.find(e => e.id === props.styleId)
-
-  if (style) {
-    return (<ColorButtonDiv>
-      <Button ref={buttonElement} color={props.getColor(style)} onClick={() => setState({
-        ...state,
-        showPicker: true
-      })} />
-      <PickerDiv ref={pickerElement} show={state.showPicker} top={state.pickerPosition}>
-        <ChromePicker color={props.getColor(style)} onChange={(color: ColorResult) => {
-          context.dispatch({
-            id: 'UPDATE_STYLE', payload: props.setColor(style, color.hex)
-          })
-        }} />
-      </PickerDiv>
-    </ColorButtonDiv>)
-  } else {
-    return <div />
-  }
+  return (<ColorButtonDiv>
+    <Button ref={buttonElement} color={state.color} onClick={() => setState({
+      ...state,
+      showPicker: true
+    })} />
+    <PickerDiv ref={pickerElement} show={state.showPicker} top={state.pickerPosition}>
+      <ChromePicker color={state.color} onChange={(color: ColorResult) => {
+        setState({
+          ...state,
+          color: color.hex
+        })
+        props.onChange(color.hex)
+      }} />
+    </PickerDiv>
+  </ColorButtonDiv>)
 
 }
 

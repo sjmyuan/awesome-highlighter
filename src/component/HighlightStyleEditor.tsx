@@ -42,39 +42,26 @@ interface HighlightStyleEditorProps {
   styleId: string
 }
 
-interface HighlightStyleEditorState {
-  backgroundColor: string
-  fontColor: string
-  opacity: number
-}
-
 const HighlightStyleEditor = (props: HighlightStyleEditorProps) => {
   const context = useContext(OptionAppContext)
-  const [state, setState] = useState<HighlightStyleEditorState>({backgroundColor: '', fontColor: '', opacity: 1})
-  useEffect(() => {
-    const style = context.state.styles.find(e => e.id === props.styleId)
-    if (style) {
-      setState({
-        backgroundColor: style.backgroundColor,
-        fontColor: style.fontColor,
-        opacity: style.opacity
-      })
-    }
-  }, [context])
   const style = context.state.styles.find(e => e.id === props.styleId)
   if (style) {
     return (<Div>
       <ButtonDiv>
         <Label>Background Color</Label>
-        <ColorButton styleId={props.styleId} getColor={(style: HighlightStyleInfo) => style.backgroundColor} setColor={(style: HighlightStyleInfo, color: string) => ({...style, backgroundColor: color})} />
+        <ColorButton color={style.backgroundColor} onChange={(color: string) => {
+          context.dispatch({id: 'UPDATE_STYLE', payload: {...style, backgroundColor: color}})
+        }} />
       </ButtonDiv>
       <ButtonDiv>
         <Label>Font Color</Label>
-        <ColorButton styleId={props.styleId} getColor={(style: HighlightStyleInfo) => style.fontColor} setColor={(style: HighlightStyleInfo, color: string) => ({...style, fontColor: color})} />
+        <ColorButton color={style.fontColor} onChange={(color: string) => {
+          context.dispatch({id: 'UPDATE_STYLE', payload: {...style, fontColor: color}})
+        }} />
       </ButtonDiv>
       <SliderDiv>
         <Label>Opacity</Label>
-        <Slider min={0} max={100} value={state.opacity * 100} onChange={(v) => {
+        <Slider min={0} max={100} value={style.opacity * 100} onChange={(v) => {
           context.dispatch({id: 'UPDATE_STYLE', payload: {...style, opacity: v / 100}})
         }} />
       </SliderDiv>
