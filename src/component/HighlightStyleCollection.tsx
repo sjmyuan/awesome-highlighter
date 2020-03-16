@@ -21,7 +21,7 @@ const HighlightStyleCollection = () => {
   return (<Ul>{context.state.styles.map(s => (
     <Li>
       <HighlightStyle styleId={s.id} />
-      <HighlightStyleEditor styleId={s.id} />
+      <HighlightStyleEditor style={s} />
     </Li>
   ))}</Ul>);
 }
