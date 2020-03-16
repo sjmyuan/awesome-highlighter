@@ -40,27 +40,27 @@ color: darkgray;
 
 interface HighlightStyleEditorProps {
   style: HighlightStyleInfo
+  onChange: (style: HighlightStyleInfo) => void
 }
 
 const HighlightStyleEditor = (props: HighlightStyleEditorProps) => {
-  const context = useContext(OptionAppContext)
   return (<Div>
     <ButtonDiv>
       <Label>Background Color</Label>
       <ColorButton color={props.style.backgroundColor} onChange={(color: string) => {
-        context.dispatch({id: 'UPDATE_STYLE', payload: {...props.style, backgroundColor: color}})
+        props.onChange({...props.style, backgroundColor: color})
       }} />
     </ButtonDiv>
     <ButtonDiv>
       <Label>Font Color</Label>
       <ColorButton color={props.style.fontColor} onChange={(color: string) => {
-        context.dispatch({id: 'UPDATE_STYLE', payload: {...props.style, fontColor: color}})
+        props.onChange({...props.style, fontColor: color})
       }} />
     </ButtonDiv>
     <SliderDiv>
       <Label>Opacity</Label>
       <Slider min={0} max={100} value={props.style.opacity * 100} onChange={(v) => {
-        context.dispatch({id: 'UPDATE_STYLE', payload: {...props.style, opacity: v / 100}})
+        props.onChange({...props.style, opacity: v / 100})
       }} />
     </SliderDiv>
   </Div>);

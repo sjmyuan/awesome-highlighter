@@ -25,22 +25,16 @@ height: 32px;
 `
 
 interface HighlightStyleProps {
-  styleId: string
+  style: HighlightStyleInfo
 }
 
 const HighlightStyle = (props: HighlightStyleProps) => {
-  const context = useContext(OptionAppContext)
-  const style = context.state.styles.find(e => e.id === props.styleId)
-  if (style) {
-    return (<Div style={style}>
-      {style.label}
-      <CloseButtonDiv>
-        <CloseButton customSize={32} onClick={() => console.log('click')} />
-      </CloseButtonDiv>
-    </Div>);
-  } else {
-    return (<div />)
-  }
+  return (<Div style={props.style}>
+    {props.style.label}
+    <CloseButtonDiv>
+      <CloseButton customSize={32} onClick={() => console.log('click')} />
+    </CloseButtonDiv>
+  </Div>);
 }
 
 export default HighlightStyle;
