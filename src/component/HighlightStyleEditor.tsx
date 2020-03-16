@@ -66,15 +66,11 @@ const HighlightStyleEditor = (props: HighlightStyleEditorProps) => {
     return (<Div>
       <ButtonDiv>
         <Label>Background Color</Label>
-        <ColorButton color={state.backgroundColor} onChange={(color: string) => {
-          context.dispatch({id: 'UPDATE_STYLE', payload: {...style, backgroundColor: color}})
-        }} />
+        <ColorButton styleId={props.styleId} getColor={(style: HighlightStyleInfo) => style.backgroundColor} setColor={(style: HighlightStyleInfo, color: string) => ({...style, backgroundColor: color})} />
       </ButtonDiv>
       <ButtonDiv>
         <Label>Font Color</Label>
-        <ColorButton color={state.fontColor} onChange={(color: string) => {
-          context.dispatch({id: 'UPDATE_STYLE', payload: {...style, fontColor: color}})
-        }} />
+        <ColorButton styleId={props.styleId} getColor={(style: HighlightStyleInfo) => style.fontColor} setColor={(style: HighlightStyleInfo, color: string) => ({...style, fontColor: color})} />
       </ButtonDiv>
       <SliderDiv>
         <Label>Opacity</Label>
