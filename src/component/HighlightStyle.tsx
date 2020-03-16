@@ -26,13 +26,14 @@ height: 32px;
 
 interface HighlightStyleProps {
   style: HighlightStyleInfo
+  onDelete: (style: HighlightStyleInfo) => void
 }
 
 const HighlightStyle = (props: HighlightStyleProps) => {
   return (<Div style={props.style}>
     {props.style.label}
     <CloseButtonDiv>
-      <CloseButton customSize={32} onClick={() => console.log('click')} />
+      <CloseButton customSize={32} onClick={() => props.onDelete(props.style)} />
     </CloseButtonDiv>
   </Div>);
 }

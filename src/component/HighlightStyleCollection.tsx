@@ -20,10 +20,11 @@ const HighlightStyleCollection = () => {
   const context = useContext(OptionAppContext)
   return (<Ul>{context.state.styles.map(s => (
     <Li>
-      <HighlightStyle style={s} />
-      <HighlightStyleEditor style={s} onChange={(style: HighlightStyleInfo) => {
+      <HighlightStyle key={`style-${s.id}`} style={s} onDelete={(style: HighlightStyleInfo) => {
+        context.dispatch({id: 'DELETE_STYLE', payload: style})
+      }} />
+      <HighlightStyleEditor key={`editor-${s.id}`} style={s} onChange={(style: HighlightStyleInfo) => {
         context.dispatch({id: 'UPDATE_STYLE', payload: style})
-
       }} />
     </Li>
   ))}</Ul>);

@@ -22,7 +22,6 @@ const reducer = (prevState: OptionAppState, action: Message) => {
     case 'LOAD_STYLES':
       return {...prevState, styles: action.payload}
     case 'UPDATE_STYLE':
-      console.log(action)
       const newStyle = action.payload as HighlightStyleInfo
       const index = prevState.styles.findIndex(e => e.id === newStyle.id)
       if (index < 0) {
@@ -32,6 +31,14 @@ const reducer = (prevState: OptionAppState, action: Message) => {
           ...prevState,
           styles: [...prevState.styles.slice(0, index), newStyle, ...prevState.styles.slice(index + 1)]
         }
+      }
+    case 'DELETE_STYLE':
+      console.log(action)
+      console.log(prevState)
+      const targetStyle = action.payload as HighlightStyleInfo
+      return {
+        ...prevState,
+        styles: prevState.styles.filter(e => e.id !== targetStyle.id)
       }
     default:
       return prevState
