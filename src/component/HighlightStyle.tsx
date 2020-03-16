@@ -1,17 +1,17 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import styled from 'styled-components'
-import {HighlightStyleInfo} from '../types'
+import {HighlightStyleInfo, OptionAppContext} from '../types'
 import CloseButton from './CloseButton';
 
 
-const Div = styled.div<HighlightStyleProps>`
+const Div = styled.div<{style: HighlightStyleInfo}>`
 width: auto;
 height: 1rem;
 padding: 1rem 1.5rem;
 font-size: large;
 background-color:${props => props.style.backgroundColor};
-font-color:${props => props.style.fontColor};
-opacity: ${props => props.style.opacity}
+color:${props => props.style.fontColor};
+opacity: ${props => props.style.opacity};
 border: 2px solid;
 display: flex;
 flex-direction: row;
@@ -25,16 +25,22 @@ height: 32px;
 `
 
 interface HighlightStyleProps {
-  style: HighlightStyleInfo;
+  styleId: string
 }
 
 const HighlightStyle = (props: HighlightStyleProps) => {
-  return (<Div style={props.style}>
-    {props.style.label}
-    <CloseButtonDiv>
-      <CloseButton customSize={32} onClick={() => console.log('click')} />
-    </CloseButtonDiv>
-  </Div>);
+  const context = useContext(OptionAppContext)
+  const style = context.state.styles.find(e => e.id === props.styleId)
+  if (style) {
+    return (<Div style={style}>
+      {style.label}
+      <CloseButtonDiv>
+        <CloseButton customSize={32} onClick={() => console.log('click')} />
+      </CloseButtonDiv>
+    </Div>);
+  } else {
+    return (<div />)
+  }
 }
 
 export default HighlightStyle;

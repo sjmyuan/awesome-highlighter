@@ -1,6 +1,6 @@
-import React, {useState} from 'react';
+import React, {useState, useContext, useEffect} from 'react';
 import styled from 'styled-components'
-import {HighlightStyleInfo} from '../types'
+import {HighlightStyleInfo, OptionAppContext} from '../types'
 import Slider from 'rc-slider'
 import ColorButton from './ColorButton'
 import 'rc-slider/assets/index.css';
@@ -39,45 +39,53 @@ color: darkgray;
 `
 
 interface HighlightStyleEditorProps {
-  style: HighlightStyleInfo;
-  onChange: (style: HighlightStyleInfo) => void
+  styleId: string
 }
 
 interface HighlightStyleEditorState {
-  style: HighlightStyleInfo
+  backgroundColor: string
+  fontColor: string
+  opacity: number
 }
 
 const HighlightStyleEditor = (props: HighlightStyleEditorProps) => {
-  const [state, setState] = useState<HighlightStyleEditorState>({style: props.style})
-  return (<Div>
-    <ButtonDiv>
-      <Label>Background Color</Label>
-      <ColorButton color={state.style.backgroundColor} onChange={(color: string) => {
-        setState({
-          style: {...state.style, backgroundColor: color}
-        })
-        props.onChange(state.style)
-      }} />
-    </ButtonDiv>
-    <ButtonDiv>
-      <Label>Font Color</Label>
-      <ColorButton color={state.style.fontColor} onChange={(color: string) => {
-        setState({
-          style: {...state.style, fontColor: color}
-        })
-        props.onChange(state.style)
-      }} />
-    </ButtonDiv>
-    <SliderDiv>
-      <Label>Opacity</Label>
-      <Slider min={0} max={100} value={state.style.opacity * 100} onChange={(v) => {
-        setState({
-          style: {...state.style, opacity: v / 100}
-        })
-        props.onChange(state.style)
-      }} />
-    </SliderDiv>
-  </Div>);
+  const context = useContext(OptionAppContext)
+  const [state, setState] = useState<HighlightStyleEditorState>({backgroundColor: '', fontColor: '', opacity: 1})
+  useEffect(() => {
+    const style = context.state.styles.find(e => e.id === props.styleId)
+    if (style) {
+      setState({
+        backgroundColor: style.backgroundColor,
+        fontColor: style.fontColor,
+        opacity: style.opacity
+      })
+    }
+  }, [context])
+  const style = context.state.styles.find(e => e.id === props.styleId)
+  if (style) {
+    return (<Div>
+      <ButtonDiv>
+        <Label>Background Color</Label>
+        <ColorButton color={state.backgroundColor} onChange={(color: string) => {
+          context.dispatch({id: 'UPDATE_STYLE', payload: {...style, backgroundColor: color}})
+        }} />
+      </ButtonDiv>
+      <ButtonDiv>
+        <Label>Font Color</Label>
+        <ColorButton color={state.fontColor} onChange={(color: string) => {
+          context.dispatch({id: 'UPDATE_STYLE', payload: {...style, fontColor: color}})
+        }} />
+      </ButtonDiv>
+      <SliderDiv>
+        <Label>Opacity</Label>
+        <Slider min={0} max={100} value={state.opacity * 100} onChange={(v) => {
+          context.dispatch({id: 'UPDATE_STYLE', payload: {...style, opacity: v / 100}})
+        }} />
+      </SliderDiv>
+    </Div>);
+  } else {
+    return (<Div />)
+  }
 }
 
 export default HighlightStyleEditor;

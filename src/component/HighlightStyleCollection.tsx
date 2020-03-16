@@ -1,6 +1,6 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import styled from 'styled-components'
-import {HighlightStyleInfo} from '../types'
+import {HighlightStyleInfo, OptionAppContext} from '../types'
 import HighlightStyle from './HighlightStyle'
 import HighlightStyleEditor from './HighlightStyleEditor';
 
@@ -16,16 +16,12 @@ const Li = styled.li`
 margin-bottom: 16px;
 `
 
-interface HighlightStyleCollectionProps {
-  styles: HighlightStyleInfo[];
-  onChange: (style: HighlightStyleInfo) => void;
-}
-
-const HighlightStyleCollection = (props: HighlightStyleCollectionProps) => {
-  return (<Ul>{props.styles.map(s => (
+const HighlightStyleCollection = () => {
+  const context = useContext(OptionAppContext)
+  return (<Ul>{context.state.styles.map(s => (
     <Li>
-      <HighlightStyle style={s} />
-      <HighlightStyleEditor style={s} onChange={props.onChange} />
+      <HighlightStyle styleId={s.id} />
+      <HighlightStyleEditor styleId={s.id} />
     </Li>
   ))}</Ul>);
 }

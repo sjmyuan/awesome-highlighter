@@ -45,7 +45,6 @@ const ColorButton = (props: ColorButtonProps) => {
     const onPicker = pickerElement.current && pickerElement.current.contains(event.target) || pickerElement.current === event.target
     if (!onPicker) {
       setState({...state, showPicker: false})
-      props.onChange(state.color)
     }
   }
 
@@ -74,6 +73,7 @@ const ColorButton = (props: ColorButtonProps) => {
           ...state,
           color: color.hex
         });
+        props.onChange(color.hex)
       }} />
     </PickerDiv>
   </ColorButtonDiv>)

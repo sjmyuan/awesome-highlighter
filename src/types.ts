@@ -1,5 +1,6 @@
 import {v4 as uuidv4} from 'uuid';
 import {removeHighlight, renderNode} from './ui'
+import React from 'react';
 
 export interface RangeIndex {
   startNodeIndex: number,
@@ -36,6 +37,16 @@ export interface HighlightStyleInfo {
   opacity: number
   label: string
 }
+
+export interface OptionAppState {
+  styles: HighlightStyleInfo[]
+}
+
+export const OptionAppContext = React.createContext<{state: OptionAppState, dispatch: (message: Message) => void}>(
+  {state: {styles: []}, dispatch: (message: Message) => {}}
+);
+
+
 
 export const getHighlightOperation: (url: string) => Promise<HighlightOperation[]> = (url: string) => {
   return new Promise((resolve, reject) => {

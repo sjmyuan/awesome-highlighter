@@ -1,7 +1,7 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useReducer, useContext} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
-import {HighlightStyleInfo} from './types';
+import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message} from './types';
 import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
 
@@ -16,15 +16,38 @@ const Content = styled.div`
     max-width: 1000px;
     width: 60%
 `
-interface AppState {
-  styles: HighlightStyleInfo[]
+
+const reducer = (prevState: OptionAppState, action: Message) => {
+  switch (action.id) {
+    case 'LOAD_STYLES':
+      return {...prevState, styles: action.payload}
+    case 'UPDATE_STYLE':
+      console.log(action)
+      const newStyle = action.payload as HighlightStyleInfo
+      const index = prevState.styles.findIndex(e => e.id === newStyle.id)
+      if (index < 0) {
+        return {...prevState, styles: [...prevState.styles, newStyle]}
+      } else {
+        return {
+          ...prevState,
+          styles: [...prevState.styles.slice(0, index), newStyle, ...prevState.styles.slice(index + 1)]
+        }
+      }
+    default:
+      return prevState
+  }
 }
+
+
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({styles: []})
+  const [state, dispatch] = useReducer<(prevState: OptionAppState, action: Message) => OptionAppState>(reducer, {
+    styles: []
+  })
 
   useEffect(() => {
-    setState({
-      styles: [{
+    dispatch({
+      id: 'LOAD_STYLES',
+      payload: [{
         id: '1',
         label: 'Red',
         backgroundColor: 'red',
@@ -41,23 +64,16 @@ const App: React.FC = () => {
     })
   }, [])
 
-  return (<Body>
-    <Content>
-      <OptionItem title="Highlight Style">
-        <HighlightStyleCollection styles={state.styles} onChange={(style: HighlightStyleInfo) => {
-          const newStyles = state.styles.reduce<HighlightStyleInfo[]>((acc, e) => {
-            if (e.id === style.id) {
-              return [...acc, style]
-            } else {
-              return [...acc, e]
-            }
-          }, [])
-
-          setState({styles: newStyles})
-        }} />
-      </OptionItem>
-    </Content>
-  </Body>
+  return (
+    <OptionAppContext.Provider value={{state, dispatch}}>
+      <Body>
+        <Content>
+          <OptionItem title="Highlight Style">
+            <HighlightStyleCollection />
+          </OptionItem>
+        </Content>
+      </Body>
+    </OptionAppContext.Provider>
   );
 }
 
