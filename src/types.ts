@@ -52,21 +52,21 @@ export const defaultHighlightStyles: HighlightStyleInfo[] = [{
   id: '1',
   label: 'Red',
   backgroundColor: '#FF0000',
-  fontColor: '#FFFFFF',
+  fontColor: '#000000',
   opacity: 1
 },
 {
   id: '2',
   label: 'Green',
   backgroundColor: '#00FF00',
-  fontColor: '#FFFFFF',
+  fontColor: '#000000',
   opacity: 1
 },
 {
   id: '3',
   label: 'Blue',
   backgroundColor: '#0000FF',
-  fontColor: '#FFFFFF',
+  fontColor: '#000000',
   opacity: 1
 }]
 

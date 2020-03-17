@@ -4,7 +4,6 @@ import {HighlightStyleInfo, OptionAppContext} from '../types'
 import HighlightStyle from './HighlightStyle'
 import HighlightStyleEditor from './HighlightStyleEditor';
 
-
 const Ul = styled.ul`
 width: auto;
 height: auto;
@@ -39,7 +38,8 @@ const HighlightStyleCollection = () => {
         </Li>
       )
     }
-  })}</Ul>);
+  })}
+  </Ul>);
 }
 
 export default HighlightStyleCollection;

@@ -4,6 +4,8 @@ import styled from 'styled-components'
 import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles} from './types';
 import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
+import AddButton from './component/AddButton';
+import {v4 as uuidv4} from 'uuid';
 
 
 const Body = styled.div`
@@ -37,6 +39,17 @@ const reducer = (prevState: OptionAppState, action: Message) => {
       return {
         ...prevState,
         styles: prevState.styles.filter(e => e.id !== targetStyle.id)
+      }
+    case 'NEW_STYLE':
+      return {
+        ...prevState,
+        styles: [...prevState.styles, {
+          id: uuidv4(),
+          label: 'New Style',
+          backgroundColor: '#FF0000',
+          fontColor: '#FFFFFF',
+          opacity: 1
+        }]
       }
     case 'CURRENT_EDIT_STYLE':
       const currentEditStyle = action.payload as HighlightStyleInfo
@@ -85,6 +98,9 @@ const App: React.FC = () => {
         <Content>
           <OptionItem title="Highlight Style">
             <HighlightStyleCollection />
+            <AddButton customSize={32} onClick={() =>
+              dispatch({id: 'NEW_STYLE'})
+            } />
           </OptionItem>
         </Content>
       </Body>
