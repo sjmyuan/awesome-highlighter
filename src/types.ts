@@ -40,6 +40,7 @@ export interface HighlightStyleInfo {
 
 export interface OptionAppState {
   styles: HighlightStyleInfo[]
+  currentEditStyle?: HighlightStyleInfo
 }
 
 export const OptionAppContext = React.createContext<{state: OptionAppState, dispatch: (message: Message) => void}>(

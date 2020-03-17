@@ -33,12 +33,16 @@ const reducer = (prevState: OptionAppState, action: Message) => {
         }
       }
     case 'DELETE_STYLE':
-      console.log(action)
-      console.log(prevState)
       const targetStyle = action.payload as HighlightStyleInfo
       return {
         ...prevState,
         styles: prevState.styles.filter(e => e.id !== targetStyle.id)
+      }
+    case 'CURRENT_EDIT_STYLE':
+      const currentEditStyle = action.payload as HighlightStyleInfo
+      return {
+        ...prevState,
+        currentEditStyle: currentEditStyle
       }
     default:
       return prevState

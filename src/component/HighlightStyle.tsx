@@ -30,8 +30,15 @@ interface HighlightStyleProps {
 }
 
 const HighlightStyle = (props: HighlightStyleProps) => {
-  return (<Div style={props.style}>
-    {props.style.label}
+  const context = useContext(OptionAppContext)
+  return (<Div style={props.style} onClick={() => {
+    if (context.state.currentEditStyle && context.state.currentEditStyle.id === props.style.id) {
+      context.dispatch({id: 'CURRENT_EDIT_STYLE'})
+    } else {
+      context.dispatch({id: 'CURRENT_EDIT_STYLE', payload: props.style})
+    }
+  }}>
+    <p>{props.style.label}</p>
     <CloseButtonDiv>
       <CloseButton customSize={32} onClick={() => props.onDelete(props.style)} />
     </CloseButtonDiv>
