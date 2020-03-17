@@ -188,7 +188,7 @@ export const recoverRange = (rangeIndex: RangeIndex) => {
   }
 }
 
-export const recoverHighlight = (id: string, info: HighlightInfo, style: HighlightStyleInfo) => {
+export const recoverHighlight = (id: string, info: HighlightInfo, style?: HighlightStyleInfo) => {
   const range = recoverRange(info.rangeIndex)
   console.log('range:' + id)
   console.log(range)
@@ -203,9 +203,7 @@ export const replayOptions = (opsList: HighlightOperation[], styles: HighlightSt
       const info = o.info
       if (info) {
         const style = styles.find(e => e.id === info.styleId)
-        if (style) {
-          recoverHighlight(o.id, info, style)
-        }
+        recoverHighlight(o.id, info, style)
       }
     } else {
       removeHighlight(o.id)
@@ -213,7 +211,7 @@ export const replayOptions = (opsList: HighlightOperation[], styles: HighlightSt
   })
 }
 
-export const highlightNode = (node: Text, id: string, range: Range, style: HighlightStyleInfo) => {
+export const highlightNode = (node: Text, id: string, range: Range, style?: HighlightStyleInfo) => {
   let isStartNode: boolean = node.isSameNode(range.startContainer)
   let isEndNode: boolean = node.isSameNode(range.endContainer)
 
@@ -250,7 +248,7 @@ export const highlightNode = (node: Text, id: string, range: Range, style: Highl
   }
 }
 
-export const highlightRange = (range: Range, id: string, style: HighlightStyleInfo) => {
+export const highlightRange = (range: Range, id: string, style?: HighlightStyleInfo) => {
   const root = range.commonAncestorContainer
   const textNodes: Text[] = []
   if (root.hasChildNodes()) {
