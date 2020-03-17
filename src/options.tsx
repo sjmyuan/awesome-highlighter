@@ -89,7 +89,9 @@ const App: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    chrome.storage.local.set({'HIGHLIGHT_STYLES': state.styles})
+    chrome.storage.local.set({'HIGHLIGHT_STYLES': state.styles}, () => {
+      chrome.runtime.sendMessage({id: 'refresh-context-menu'})
+    })
   }, [state.styles])
 
   return (
