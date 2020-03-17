@@ -1,7 +1,7 @@
 import React, {useEffect, useReducer, useContext} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
-import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message} from './types';
+import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles} from './types';
 import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
 
@@ -56,24 +56,28 @@ const App: React.FC = () => {
   })
 
   useEffect(() => {
-    dispatch({
-      id: 'LOAD_STYLES',
-      payload: [{
-        id: '1',
-        label: 'Red',
-        backgroundColor: 'red',
-        fontColor: 'black',
-        opacity: 1
-      },
-      {
-        id: '2',
-        label: 'Yellow',
-        backgroundColor: 'yellow',
-        fontColor: 'black',
-        opacity: 1
-      }]
+    chrome.storage.local.get('HIGHLIGHT_STYLES', (item) => {
+      if (chrome.runtime.lastError) {
+        console.log(`error when get HIGHLIGHT_STYLES, error is ${chrome.runtime.lastError.toString()}`)
+      } else {
+        if (item['HIGHLIGHT_STYLES']) {
+          dispatch({
+            id: 'LOAD_STYLES',
+            payload: item['HIGHLIGHT_STYLES']
+          })
+        } else {
+          dispatch({
+            id: 'LOAD_STYLES',
+            payload: defaultHighlightStyles
+          })
+        }
+      }
     })
   }, [])
+
+  useEffect(() => {
+    chrome.storage.local.set({'HIGHLIGHT_STYLES': state.styles})
+  }, [state.styles])
 
   return (
     <OptionAppContext.Provider value={{state, dispatch}}>

@@ -48,6 +48,27 @@ export const OptionAppContext = React.createContext<{state: OptionAppState, disp
 );
 
 
+export const defaultHighlightStyles: HighlightStyleInfo[] = [{
+  id: '1',
+  label: 'Red',
+  backgroundColor: '#FF0000',
+  fontColor: '#FFFFFF',
+  opacity: 1
+},
+{
+  id: '2',
+  label: 'Green',
+  backgroundColor: '#00FF00',
+  fontColor: '#FFFFFF',
+  opacity: 1
+},
+{
+  id: '3',
+  label: 'Blue',
+  backgroundColor: '#0000FF',
+  fontColor: '#FFFFFF',
+  opacity: 1
+}]
 
 export const getHighlightOperation: (url: string) => Promise<HighlightOperation[]> = (url: string) => {
   return new Promise((resolve, reject) => {
