@@ -3,10 +3,11 @@ const webpack = require('webpack');
 
 module.exports = {
   resolve: {
-    extensions: ['.ts', '.tsx', '.js']
+    extensions: ['.ts', '.tsx', '.js', '.css']
   },
   entry: {
     popup: [path.join(__dirname, 'src/popup')],
+    options: [path.join(__dirname, 'src/options')],
     content_script: [path.join(__dirname, 'src/content_script')],
     background_script: [path.join(__dirname, 'src/background_script')],
   },
@@ -27,6 +28,10 @@ module.exports = {
       {
         test: /\.tsx?$/,
         loader: "ts-loader"
+      },
+      {
+        test: /\.css$/i,
+        use: ['style-loader','css-loader'],
       }
     ]
   }

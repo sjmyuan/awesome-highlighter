@@ -1,5 +1,6 @@
 import {v4 as uuidv4} from 'uuid';
 import {removeHighlight, renderNode} from './ui'
+import React from 'react';
 
 export interface RangeIndex {
   startNodeIndex: number,
@@ -12,6 +13,7 @@ export interface RangeIndex {
 
 export interface HighlightInfo {
   id: string,
+  styleId: string,
   url: string,
   title: string,
   highlightHTML: string,
@@ -28,6 +30,45 @@ export interface Message {
   id: string
   payload?: any
 }
+
+export interface HighlightStyleInfo {
+  id: string
+  backgroundColor: string
+  fontColor: string
+  opacity: number
+  label: string
+}
+
+export interface OptionAppState {
+  styles: HighlightStyleInfo[]
+  currentEditStyle?: HighlightStyleInfo
+}
+
+export const OptionAppContext = React.createContext<{state: OptionAppState, dispatch: (message: Message) => void}>(
+  {state: {styles: []}, dispatch: (message: Message) => {}}
+);
+
+export const defaultHighlightStyles: HighlightStyleInfo[] = [{
+  id: '1',
+  label: 'Red',
+  backgroundColor: '#FF0000',
+  fontColor: '#000000',
+  opacity: 1
+},
+{
+  id: '2',
+  label: 'Green',
+  backgroundColor: '#00FF00',
+  fontColor: '#000000',
+  opacity: 1
+},
+{
+  id: '3',
+  label: 'Blue',
+  backgroundColor: '#0000FF',
+  fontColor: '#000000',
+  opacity: 1
+}]
 
 export const getHighlightOperation: (url: string) => Promise<HighlightOperation[]> = (url: string) => {
   return new Promise((resolve, reject) => {
@@ -64,21 +105,21 @@ export const getRangeContent = (range: Range) => {
   return highlightHTML
 }
 
-export const generateHighlightInfo = (range: Range, id: string) => {
+export const generateHighlightInfo = (range: Range, id: string, styleId: string) => {
   const rangeIndex = generateRangeIndex(range)
   const highlightHTML = getRangeContent(range)
-  return {id: id, url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML}
+  return {id: id, styleId: styleId, url: document.documentURI, title: document.title, rangeIndex: rangeIndex, highlightHTML: highlightHTML}
 }
 
-export const highlightSelection = () => {
+export const highlightSelection = (style: HighlightStyleInfo) => {
   const selection = window.getSelection()
   const highlightInfos: HighlightInfo[] = []
   if (selection) {
     for (let index = 0; index < selection.rangeCount; index++) {
       const range = selection.getRangeAt(index)
       const id = uuidv4()
-      highlightInfos.push(generateHighlightInfo(range, id))
-      highlightRange(range, id)
+      highlightInfos.push(generateHighlightInfo(range, id, style.id))
+      highlightRange(range, id, style)
     }
   }
 
@@ -147,20 +188,22 @@ export const recoverRange = (rangeIndex: RangeIndex) => {
   }
 }
 
-export const recoverHighlight = (id: string, info: HighlightInfo) => {
+export const recoverHighlight = (id: string, info: HighlightInfo, style?: HighlightStyleInfo) => {
   const range = recoverRange(info.rangeIndex)
   console.log('range:' + id)
   console.log(range)
   if (range) {
-    highlightRange(range, id)
+    highlightRange(range, id, style)
   }
 }
 
-export const replayOptions = (opsList: HighlightOperation[]) => {
+export const replayOptions = (opsList: HighlightOperation[], styles: HighlightStyleInfo[]) => {
   opsList.forEach(o => {
     if (o.ops === "create") {
-      if (o.info) {
-        recoverHighlight(o.id, o.info)
+      const info = o.info
+      if (info) {
+        const style = styles.find(e => e.id === info.styleId)
+        recoverHighlight(o.id, info, style)
       }
     } else {
       removeHighlight(o.id)
@@ -168,7 +211,7 @@ export const replayOptions = (opsList: HighlightOperation[]) => {
   })
 }
 
-export const highlightNode = (node: Text, id: string, range: Range) => {
+export const highlightNode = (node: Text, id: string, range: Range, style?: HighlightStyleInfo) => {
   let isStartNode: boolean = node.isSameNode(range.startContainer)
   let isEndNode: boolean = node.isSameNode(range.endContainer)
 
@@ -181,7 +224,7 @@ export const highlightNode = (node: Text, id: string, range: Range) => {
     const first = node
     const second = first.splitText(range.startOffset)
     const third = second.splitText(range.endOffset)
-    renderNode(second, id, true)
+    renderNode(second, id, true, style)
   } else if (isStartNode) {
     // -----------------
     //     start
@@ -190,7 +233,7 @@ export const highlightNode = (node: Text, id: string, range: Range) => {
 
     const first = node
     const second = first.splitText(range.startOffset)
-    renderNode(second, id, true)
+    renderNode(second, id, true, style)
   } else if (isEndNode) {
     // -----------------
     //     end
@@ -199,13 +242,13 @@ export const highlightNode = (node: Text, id: string, range: Range) => {
 
     const first = node
     const second = first.splitText(range.endOffset)
-    renderNode(first, id, false)
+    renderNode(first, id, false, style)
   } else {
-    renderNode(node, id, false)
+    renderNode(node, id, false, style)
   }
 }
 
-export const highlightRange = (range: Range, id: string) => {
+export const highlightRange = (range: Range, id: string, style?: HighlightStyleInfo) => {
   const root = range.commonAncestorContainer
   const textNodes: Text[] = []
   if (root.hasChildNodes()) {
@@ -227,7 +270,35 @@ export const highlightRange = (range: Range, id: string) => {
   for (let index = 0; index < textNodes.length; index++) {
     const currentNode = textNodes[index];
     if (currentNode.textContent && currentNode.textContent.trim().length > 0) {
-      highlightNode(currentNode, id, range)
+      highlightNode(currentNode, id, range, style)
     }
   }
+}
+
+export const getHighlightStyles: () => Promise<HighlightStyleInfo[]> = () => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get('HIGHLIGHT_STYLES', (item) => {
+      if (chrome.runtime.lastError) {
+        reject(`error when get HIGHLIGHT_STYLES, error is ${chrome.runtime.lastError.toString()}`)
+      } else {
+        if (item['HIGHLIGHT_STYLES']) {
+          resolve(item['HIGHLIGHT_STYLES'])
+        } else {
+          resolve(defaultHighlightStyles)
+        }
+      }
+    })
+  })
+}
+
+export const saveHighlightStyles = (styles: HighlightStyleInfo[]) => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set({'HIGHLIGHT_STYLES': styles}, () => {
+      if (chrome.runtime.lastError) {
+        reject(`failed to save the highlight styles, error is ${chrome.runtime.lastError.toString()}`)
+      } else {
+        resolve('success')
+      }
+    })
+  })
 }

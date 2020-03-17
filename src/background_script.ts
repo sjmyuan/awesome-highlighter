@@ -1,10 +1,10 @@
-import {HighlightInfo, saveHighlightOperation, getHighlightOperation, HighlightOperation, Message} from "./types"
+import {saveHighlightOperation, getHighlightOperation, HighlightOperation, Message, getHighlightStyles, HighlightStyleInfo} from "./types"
 
-const getHighlightInfoFromTab = (tab: chrome.tabs.Tab) => {
+const getHighlightInfoFromTab = (tab: chrome.tabs.Tab, style: HighlightStyleInfo) => {
   console.log('Send message to get highlightInfos')
   console.log(tab)
   if (tab.id && tab.url) {
-    chrome.tabs.sendMessage(tab.id, {id: 'get_new_highlight_operations'}, (message: {highlightOperations: HighlightOperation[]}) => {
+    chrome.tabs.sendMessage(tab.id, {id: 'get_new_highlight_operations', payload: style}, (message: {highlightOperations: HighlightOperation[]}) => {
       console.log(message)
       getHighlightOperation(tab.url as string).then(oldHighlightOperations => {
         saveHighlightOperation(tab.url as string, oldHighlightOperations.concat(message.highlightOperations))
@@ -33,12 +33,20 @@ const onMessageReceived = (message: Message,
     })
   }
 
+  if (message.id === 'refresh-context-menu') {
+    createContextMenu().then(() => sendResponse('success'))
+  }
+
   return true
 }
 
 const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
-  if (info.menuItemId === 'highlight-text' && tab && tab.id) {
-    getHighlightInfoFromTab(tab)
+  if (tab && tab.id) {
+    getHighlightStyles().then(styles => {
+      styles.filter(s => `highlight-text-${s.id}` === info.menuItemId).forEach(s => {
+        getHighlightInfoFromTab(tab, s)
+      })
+    })
   }
 }
 
@@ -46,14 +54,32 @@ const onBrowserActionClicked = () => {
   //getHighlightInfoFromTab(tab)
 }
 
+const createContextMenu = () => {
+  return new Promise((resolve, reject) => {
+    chrome.contextMenus.removeAll(() => {
+      chrome.contextMenus.create({
+        id: 'highlight-text',
+        title: 'Highlight The Selected Text',
+        contexts: ['selection'],
+      })
+      getHighlightStyles().then((styles: HighlightStyleInfo[]) => {
+        styles.map(s => {
+          chrome.contextMenus.create({
+            id: `highlight-text-${s.id}`,
+            title: s.label,
+            parentId: 'highlight-text',
+            contexts: ['selection'],
+          })
+        })
+      }).then(() => resolve('success'))
+    })
+  })
+}
+
 const initBackgroundScript = () => {
   console.log('background running');
   chrome.runtime.onInstalled.addListener(() => {
-    chrome.contextMenus.create({
-      id: 'highlight-text',
-      title: 'Highlight The Selected Text',
-      contexts: ['selection'],
-    })
+    createContextMenu()
   });
 
   chrome.runtime.onMessage.addListener(onMessageReceived)

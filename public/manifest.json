@@ -4,14 +4,15 @@
   "manifest_version": 2,
   "description": "Highlight your selected text",
   "icons": {
-    "16": "img/icon-16.png",
-    "48": "img/icon-48.png",
+    "32": "img/icon-32.png",
+    "64": "img/icon-64.png",
     "128": "img/icon-128.png"
   },
   "browser_action": {
     "default_title": "Highlight The Selected Text",
     "default_popup": "popup.html"
   },
+  "options_page": "options.html",
   "background": {
     "scripts": [
       "js/background_script.bundle.js"

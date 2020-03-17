@@ -1,3 +1,5 @@
+import {HighlightStyleInfo} from "./types"
+
 export const createButton: (x: number, y: number) => HTMLElement =
   (x: number, y: number) => {
     const button = document.createElement('a')
@@ -50,17 +52,25 @@ export const removeDeleteButton = (element: HTMLElement) => {
   }
 }
 
-export const renderNode = (node: Text, id: string, isStarter: boolean) => {
+export const renderNode = (node: Text, id: string, isStarter: boolean, style?: HighlightStyleInfo) => {
   const parentNode = node.parentNode
   if (parentNode) {
     const mark = document.createElement('mark')
     mark.classList.add(`awesome-highlighter-${id}`)
-    mark.classList.add(`awesome-highlighter-yellow`)
     isStarter && mark.classList.add(`awesome-highlighter-${id}-starter`)
     mark.setAttribute('data-highlight-id', id)
+    if (style) {
+      mark.style.backgroundColor = style.backgroundColor
+      mark.style.color = style.fontColor
+      mark.style.opacity = style.opacity.toString()
+      mark.onmouseenter = showDeleteButton(mark, id)
+      mark.onmouseleave = removeDeleteButton(mark)
+    } else {
+      mark.style.backgroundColor = 'inherit'
+      mark.style.color = 'inherit'
+      mark.style.opacity = 'inherit'
+    }
     mark.appendChild(node.cloneNode())
-    mark.onmouseenter = showDeleteButton(mark, id)
-    mark.onmouseleave = removeDeleteButton(mark)
     parentNode.replaceChild(mark, node)
   }
 }
