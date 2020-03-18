@@ -302,3 +302,15 @@ export const saveHighlightStyles = (styles: HighlightStyleInfo[]) => {
     })
   })
 }
+
+export const copyAsString = (html: string) => {
+  const div = document.createElement('div');
+  div.innerHTML = html
+  const input = document.createElement('input')
+  document.body.appendChild(input)
+  input.value = div.textContent as string
+  input.focus()
+  input.select()
+  document.execCommand('copy')
+  document.body.removeChild(input)
+}
