@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
 import HighlightCollection from './component/HighlightCollection';
-import {getHighlightOperation, HighlightInfo, HighlightOperation} from './types';
+import {getHighlightOperation, HighlightInfo, HighlightOperation, HighlightStyleInfo, generateHighlightInfo, getHighlightStyles} from './types';
 
 
 const PopupDiv = styled.div`
@@ -13,14 +13,16 @@ const PopupDiv = styled.div`
     `
 interface AppState {
   infos: HighlightInfo[]
+  styles: HighlightStyleInfo[]
 }
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({infos: []})
+  const [state, setState] = useState<AppState>({infos: [], styles: []})
 
   useEffect(() => {
     chrome.tabs.query({active: true}, (tabs) => {
       if (tabs[0] && tabs[0].url) {
-        getHighlightOperation(tabs[0].url).then(operations => {
+        Promise.all([getHighlightOperation(tabs[0].url), getHighlightStyles()]).then(data => {
+          const [operations, styles] = data
           setState({
             infos: operations.reduce<HighlightOperation[]>((acc: HighlightOperation[], ele: HighlightOperation) => {
               if (ele.ops === 'delete') {
@@ -28,7 +30,8 @@ const App: React.FC = () => {
               } else {
                 return [...acc, ele]
               }
-            }, []).map(e => e.info as HighlightInfo)
+            }, []).map(e => e.info as HighlightInfo),
+            styles: styles
           })
         })
       }
@@ -39,7 +42,7 @@ const App: React.FC = () => {
   }, [])
 
   return (<PopupDiv>
-    <HighlightCollection infos={state.infos} />
+    <HighlightCollection infos={state.infos} styles={state.styles} />
   </PopupDiv>
   );
 }
