@@ -1,4 +1,4 @@
-import {saveHighlightOperation, getHighlightOperation, HighlightOperation, Message, getHighlightStyles, HighlightStyleInfo} from "./types"
+import {saveHighlightOperation, getHighlightOperation, HighlightOperation, Message, getHighlightStyles, HighlightStyleInfo, copyAsString} from "./types"
 
 const getHighlightInfoFromTab = (tab: chrome.tabs.Tab, style: HighlightStyleInfo) => {
   console.log('Send message to get highlightInfos')
@@ -35,6 +35,11 @@ const onMessageReceived = (message: Message,
 
   if (message.id === 'refresh-context-menu') {
     createContextMenu().then(() => sendResponse('success'))
+  }
+
+  if (message.id === 'copy-as-string') {
+    copyAsString(message.payload as string)
+    sendResponse('success')
   }
 
   return true
