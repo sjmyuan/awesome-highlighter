@@ -3,6 +3,7 @@ import {removeHighlight, renderNode} from './ui'
 import React from 'react';
 import TurndownServie from 'turndown';
 import {gfm} from 'turndown-plugin-gfm';
+import FileSaver from 'file-saver'
 
 export interface RangeIndex {
   startNodeIndex: number,
@@ -329,4 +330,24 @@ export const copyAsMarkdown = (html: string) => {
   input.select()
   document.execCommand('copy')
   document.body.removeChild(input)
+}
+
+export const htmlToString = (html: string) => {
+  const div = document.createElement('div');
+  div.innerHTML = html
+  return div.textContent as string
+}
+
+export const saveStringToFile = (first: HighlightInfo, others: HighlightInfo[]) => {
+  const content = [first, ...others].map(info => htmlToString(info.highlightHTML)).join("\n\n")
+  const title = first.title.replace(' ', '-')
+  const blob = new Blob([content], {type: 'text/plain;charset=utf-8'})
+  FileSaver.saveAs(blob, `${title}.txt`);
+}
+
+export const saveMarkdownToFile = (first: HighlightInfo, others: HighlightInfo[]) => {
+  const content = [first, ...others].map(info => turndownServie.turndown(info.highlightHTML)).join("\n\n")
+  const title = first.title.replace(' ', '-')
+  const blob = new Blob([content], {type: 'text/plain;charset=utf-8'})
+  FileSaver.saveAs(blob, `${title}.md`);
 }
