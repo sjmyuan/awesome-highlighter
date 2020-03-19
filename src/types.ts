@@ -1,6 +1,8 @@
 import {v4 as uuidv4} from 'uuid';
 import {removeHighlight, renderNode} from './ui'
 import React from 'react';
+import TurndownServie from 'turndown';
+import {gfm} from 'turndown-plugin-gfm';
 
 export interface RangeIndex {
   startNodeIndex: number,
@@ -309,6 +311,20 @@ export const copyAsString = (html: string) => {
   const input = document.createElement('input')
   document.body.appendChild(input)
   input.value = div.textContent as string
+  input.focus()
+  input.select()
+  document.execCommand('copy')
+  document.body.removeChild(input)
+}
+
+export const turndownServie = new TurndownServie({headingStyle: 'atx', codeBlockStyle: 'fenced'});
+turndownServie.use(gfm)
+
+export const copyAsMarkdown = (html: string) => {
+  const markdown = turndownServie.turndown(html)
+  const input = document.createElement('input')
+  document.body.appendChild(input)
+  input.value = markdown
   input.focus()
   input.select()
   document.execCommand('copy')
