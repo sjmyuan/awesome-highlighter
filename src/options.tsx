@@ -104,6 +104,10 @@ const App: React.FC = () => {
               dispatch({id: 'NEW_STYLE'})
             } />
           </OptionItem>
+          <OptionItem title="Backup & Restore">
+            <button>Export</button>
+            <button>Import</button>
+          </OptionItem>
         </Content>
       </Body>
     </OptionAppContext.Provider>
