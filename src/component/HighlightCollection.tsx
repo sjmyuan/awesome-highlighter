@@ -31,7 +31,7 @@ const ButtonInnerDiv = styled.div`
 display: flex;
 flex-direction: row;
 justify-content: space-between;
-width: 100px;
+width: 40px;
 `
 
 interface HighlightCollectionProps {
