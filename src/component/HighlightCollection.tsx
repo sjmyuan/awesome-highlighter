@@ -24,7 +24,8 @@ const ButtonDiv = styled.div`
 display: flex;
 flex-direction: row;
 justify-content: flex-end;
-margin-top: 5px
+margin-top: 5px;
+padding-right: 10px;
 `
 
 const ButtonInnerDiv = styled.div`

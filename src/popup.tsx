@@ -23,6 +23,7 @@ flex-direction: column;
 align-items: stretch;
 overflow-y: auto;
 overflow-x: hidden;
+padding: 10px;
 `
 
 const ButtonDiv = styled.div`
@@ -33,13 +34,12 @@ margin-top: 5px;
 border-top: 1px solid;
 `
 
-const ExportStringButton = styled.button`
+const ExportButton = styled.button`
 flex-grow: 1;
-border-right: 1px solid;
-`
-const ExportMarkdownButton = styled.button`
-flex-grow: 1;
-border-left: 1px solid;
+border: 1px solid;
+border-radius: 5px;
+margin: 5px;
+padding: 10px;
 `
 
 interface AppState {
@@ -77,8 +77,8 @@ const App: React.FC = () => {
       <HighlightCollection infos={state.infos} styles={state.styles} />
     </HighlightDiv>
     <ButtonDiv>
-      <ExportStringButton disabled={state.infos.length == 0} onClick={() => saveStringToFile(state.infos[0], state.infos.slice(1))}>Export as String</ExportStringButton>
-      <ExportMarkdownButton disabled={state.infos.length == 0} onClick={() => saveMarkdownToFile(state.infos[0], state.infos.slice(1))}>Export as Markdown</ExportMarkdownButton>
+      <ExportButton disabled={state.infos.length == 0} onClick={() => saveStringToFile(state.infos[0], state.infos.slice(1))}>Export as String</ExportButton>
+      <ExportButton disabled={state.infos.length == 0} onClick={() => saveMarkdownToFile(state.infos[0], state.infos.slice(1))}>Export as Markdown</ExportButton>
     </ButtonDiv>
   </PopupDiv>
   );
