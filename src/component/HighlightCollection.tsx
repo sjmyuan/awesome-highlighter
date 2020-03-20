@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import Highlight from './Highlight';
 import {HighlightInfo, HighlightStyleInfo} from '../types';
 import CopyButton from './CopyButton';
+import CopyMarkdownButton from './CopyMarkdownButton';
 
 const Ol = styled.ol`
   with: 100%;
@@ -23,7 +24,15 @@ const ButtonDiv = styled.div`
 display: flex;
 flex-direction: row;
 justify-content: flex-end;
-margin-top: 5px
+margin-top: 5px;
+padding-right: 10px;
+`
+
+const ButtonInnerDiv = styled.div`
+display: flex;
+flex-direction: row;
+justify-content: space-between;
+width: 40px;
 `
 
 interface HighlightCollectionProps {
@@ -39,9 +48,14 @@ const HighlightCollection = (props: HighlightCollectionProps) => {
         return (<Li>
           <Highlight info={info} style={style} />
           <ButtonDiv>
-            <CopyButton customSize={16} tooltip="Copy to Clipboard" onClick={() =>
-              chrome.runtime.sendMessage({id: 'copy-as-string', payload: info.highlightHTML})
-            } />
+            <ButtonInnerDiv>
+              <CopyButton customSize={16} tooltip="Copy as String" onClick={() =>
+                chrome.runtime.sendMessage({id: 'copy-as-string', payload: info.highlightHTML})
+              } />
+              <CopyMarkdownButton customSize={16} tooltip="Copy as Markdown" onClick={() =>
+                chrome.runtime.sendMessage({id: 'copy-as-markdown', payload: info.highlightHTML})
+              } />
+            </ButtonInnerDiv>
           </ButtonDiv>
         </Li>)
       })

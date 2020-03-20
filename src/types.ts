@@ -1,6 +1,9 @@
 import {v4 as uuidv4} from 'uuid';
 import {removeHighlight, renderNode} from './ui'
 import React from 'react';
+import TurndownServie from 'turndown';
+import {gfm} from 'turndown-plugin-gfm';
+import FileSaver from 'file-saver'
 
 export interface RangeIndex {
   startNodeIndex: number,
@@ -304,13 +307,65 @@ export const saveHighlightStyles = (styles: HighlightStyleInfo[]) => {
 }
 
 export const copyAsString = (html: string) => {
-  const div = document.createElement('div');
-  div.innerHTML = html
   const input = document.createElement('input')
   document.body.appendChild(input)
-  input.value = div.textContent as string
+  input.value = htmlToString(html)
   input.focus()
   input.select()
   document.execCommand('copy')
   document.body.removeChild(input)
+}
+
+export const turndownServie = new TurndownServie({headingStyle: 'atx', codeBlockStyle: 'fenced'});
+turndownServie.use(gfm)
+
+export const copyAsMarkdown = (html: string) => {
+  const markdown = turndownServie.turndown(html)
+  const input = document.createElement('input')
+  document.body.appendChild(input)
+  input.value = markdown
+  input.focus()
+  input.select()
+  document.execCommand('copy')
+  document.body.removeChild(input)
+}
+
+export const htmlToString = (html: string) => {
+  const div = document.createElement('div');
+  div.innerHTML = html
+  return div.textContent as string
+}
+
+export const saveStringToFile = (first: HighlightInfo, others: HighlightInfo[]) => {
+  const content = [first, ...others].map(info => htmlToString(info.highlightHTML)).join("\n\n")
+  const title = first.title.replace(' ', '-')
+  const blob = new Blob([content], {type: 'text/plain;charset=utf-8'})
+  FileSaver.saveAs(blob, `${title}.txt`);
+}
+
+export const saveMarkdownToFile = (first: HighlightInfo, others: HighlightInfo[]) => {
+  const content = [first, ...others].map(info => turndownServie.turndown(info.highlightHTML)).join("\n\n")
+  const title = first.title.replace(' ', '-')
+  const blob = new Blob([content], {type: 'text/plain;charset=utf-8'})
+  FileSaver.saveAs(blob, `${title}.md`);
+}
+
+export const exportAllHighlightInfo = () => {
+  chrome.storage.local.get((items) => {
+    const blob = new Blob([JSON.stringify(items)], {type: 'application/json;charset=utf-8'})
+    FileSaver.saveAs(blob, 'awesome-highlighter.json');
+  })
+}
+
+export const restoreHighlightInfo = (file?: File) => {
+  if (file) {
+    const fileReader = new FileReader()
+    fileReader.onloadend = () => {
+      if (fileReader.result) {
+        const infos = JSON.parse(fileReader.result as string)
+        chrome.storage.local.set(infos)
+      }
+    }
+    fileReader.readAsText(file)
+  }
 }

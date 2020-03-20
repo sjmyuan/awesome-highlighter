@@ -1,4 +1,4 @@
-import {saveHighlightOperation, getHighlightOperation, HighlightOperation, Message, getHighlightStyles, HighlightStyleInfo, copyAsString} from "./types"
+import {saveHighlightOperation, getHighlightOperation, HighlightOperation, Message, getHighlightStyles, HighlightStyleInfo, copyAsString, copyAsMarkdown} from "./types"
 
 const getHighlightInfoFromTab = (tab: chrome.tabs.Tab, style: HighlightStyleInfo) => {
   console.log('Send message to get highlightInfos')
@@ -39,6 +39,11 @@ const onMessageReceived = (message: Message,
 
   if (message.id === 'copy-as-string') {
     copyAsString(message.payload as string)
+    sendResponse('success')
+  }
+
+  if (message.id === 'copy-as-markdown') {
+    copyAsMarkdown(message.payload as string)
     sendResponse('success')
   }
 

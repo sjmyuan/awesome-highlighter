@@ -1,7 +1,7 @@
 import React, {useEffect, useReducer, useContext} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
-import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles} from './types';
+import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles, exportAllHighlightInfo, restoreHighlightInfo} from './types';
 import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
 import AddButton from './component/AddButton';
@@ -17,6 +17,10 @@ const Body = styled.div`
 const Content = styled.div`
     max-width: 1000px;
     width: 60%
+`
+
+const Div = styled.div`
+margin: 10px;
 `
 
 const reducer = (prevState: OptionAppState, action: Message) => {
@@ -103,6 +107,19 @@ const App: React.FC = () => {
             <AddButton customSize={32} onClick={() =>
               dispatch({id: 'NEW_STYLE'})
             } />
+          </OptionItem>
+          <OptionItem title="Backup & Restore">
+            <Div>
+              <h2>Backup</h2>
+              <p>Export all the configuration and highlight information to a file</p>
+              <button onClick={() => exportAllHighlightInfo()}>Export</button>
+            </Div>
+            <Div>
+              <h2>Restore</h2>
+              <p>Restore the configuration and highlight information from a file which was exported before</p>
+              <label>Select a file: </label>
+              <input type='file' accept='.json' onChange={(e) => e.target.files && restoreHighlightInfo(e.target.files[0])} />
+            </Div>
           </OptionItem>
         </Content>
       </Body>
