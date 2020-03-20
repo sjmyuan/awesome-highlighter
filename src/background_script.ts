@@ -1,4 +1,4 @@
-import {saveHighlightOperation, getHighlightOperation, HighlightOperation, Message, getHighlightStyles, HighlightStyleInfo, copyAsString, copyAsMarkdown} from "./types"
+import {saveHighlightOperation, getHighlightOperation, HighlightOperation, Message, getHighlightStyles, HighlightStyleInfo, copyAsString, copyAsMarkdown, getAvailableUrls} from "./types"
 
 const getHighlightInfoFromTab = (tab: chrome.tabs.Tab, style: HighlightStyleInfo) => {
   console.log('Send message to get highlightInfos')
@@ -60,10 +60,6 @@ const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrom
   }
 }
 
-const onBrowserActionClicked = () => {
-  //getHighlightInfoFromTab(tab)
-}
-
 const createContextMenu = () => {
   return new Promise((resolve, reject) => {
     chrome.contextMenus.removeAll(() => {
@@ -96,7 +92,18 @@ const initBackgroundScript = () => {
 
   chrome.contextMenus.onClicked.addListener(onContextMenuClicked)
 
-  chrome.browserAction.onClicked.addListener(onBrowserActionClicked)
+  getAvailableUrls().then(urls => {
+    chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
+      chrome.declarativeContent.onPageChanged.addRules([{
+        conditions: [
+          new chrome.declarativeContent.PageStateMatcher({
+            pageUrl: {urlMatches: `^(${urls.join('|').replace(/\./gi, '\\.').replace(/\//gi, '\\/')})$`}
+          })
+        ],
+        actions: [new chrome.declarativeContent.ShowPageAction()]
+      }])
+    })
+  })
 }
 
 initBackgroundScript();

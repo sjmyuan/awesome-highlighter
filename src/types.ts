@@ -369,3 +369,11 @@ export const restoreHighlightInfo = (file?: File) => {
     fileReader.readAsText(file)
   }
 }
+
+export const getAvailableUrls = () => {
+  return new Promise<string[]>((resolve, reject) => {
+    chrome.storage.local.get((items) => {
+      resolve(Object.keys(items).filter(e => e.startsWith('http') || e.startsWith('https')))
+    })
+  })
+}
