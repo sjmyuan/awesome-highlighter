@@ -67,17 +67,18 @@ const createContextMenu = () => {
         id: 'highlight-text',
         title: 'Highlight The Selected Text',
         contexts: ['selection'],
-      })
-      getHighlightStyles().then((styles: HighlightStyleInfo[]) => {
-        styles.map(s => {
-          chrome.contextMenus.create({
-            id: `highlight-text-${s.id}`,
-            title: s.label,
-            parentId: 'highlight-text',
-            contexts: ['selection'],
+      }, () => {
+        getHighlightStyles().then((styles: HighlightStyleInfo[]) => {
+          styles.map(s => {
+            chrome.contextMenus.create({
+              id: `highlight-text-${s.id}`,
+              title: s.label,
+              parentId: 'highlight-text',
+              contexts: ['selection'],
+            })
           })
-        })
-      }).then(() => resolve('success'))
+        }).then(() => resolve('success'))
+      })
     })
   })
 }
