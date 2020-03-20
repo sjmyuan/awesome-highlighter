@@ -1,7 +1,7 @@
 import React, {useEffect, useReducer, useContext} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
-import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles} from './types';
+import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles, exportAllHighlightInfo} from './types';
 import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
 import AddButton from './component/AddButton';
@@ -105,7 +105,7 @@ const App: React.FC = () => {
             } />
           </OptionItem>
           <OptionItem title="Backup & Restore">
-            <button>Export</button>
+            <button onClick={() => exportAllHighlightInfo()}>Export</button>
             <button>Import</button>
           </OptionItem>
         </Content>

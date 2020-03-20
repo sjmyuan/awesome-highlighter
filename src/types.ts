@@ -307,11 +307,9 @@ export const saveHighlightStyles = (styles: HighlightStyleInfo[]) => {
 }
 
 export const copyAsString = (html: string) => {
-  const div = document.createElement('div');
-  div.innerHTML = html
   const input = document.createElement('input')
   document.body.appendChild(input)
-  input.value = div.textContent as string
+  input.value = htmlToString(html)
   input.focus()
   input.select()
   document.execCommand('copy')
@@ -350,4 +348,18 @@ export const saveMarkdownToFile = (first: HighlightInfo, others: HighlightInfo[]
   const title = first.title.replace(' ', '-')
   const blob = new Blob([content], {type: 'text/plain;charset=utf-8'})
   FileSaver.saveAs(blob, `${title}.md`);
+}
+
+export const exportAllHighlightInfo = () => {
+  chrome.storage.local.get((items) => {
+    const blob = new Blob([JSON.stringify(items)], {type: 'application/json;charset=utf-8'})
+    FileSaver.saveAs(blob, 'awesome-highlighter.json');
+  })
+}
+
+export const restoreHighlightInfo = () => {
+  chrome.storage.local.get((items) => {
+    const blob = new Blob([JSON.stringify(items)], {type: 'application/json;charset=utf-8'})
+    FileSaver.saveAs(blob, 'awesome-highlighter.json');
+  })
 }
