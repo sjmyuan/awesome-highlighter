@@ -6,6 +6,7 @@ display: flex;
 flex-direction: column;
 justify-content: center;
 align-items: stretch;
+margin-bottom: 30px;
 `
 const TitleLabel = styled.label`
 font-size: x-large;

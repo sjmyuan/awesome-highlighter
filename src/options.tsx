@@ -19,6 +19,10 @@ const Content = styled.div`
     width: 60%
 `
 
+const Div = styled.div`
+margin: 10px;
+`
+
 const reducer = (prevState: OptionAppState, action: Message) => {
   switch (action.id) {
     case 'LOAD_STYLES':
@@ -105,8 +109,17 @@ const App: React.FC = () => {
             } />
           </OptionItem>
           <OptionItem title="Backup & Restore">
-            <button onClick={() => exportAllHighlightInfo()}>Export</button>
-            <input type='file' accept='.json' onChange={(e) => e.target.files && restoreHighlightInfo(e.target.files[0])} />
+            <Div>
+              <h2>Backup</h2>
+              <p>Export all the configuration and highlight information to a file</p>
+              <button onClick={() => exportAllHighlightInfo()}>Export</button>
+            </Div>
+            <Div>
+              <h2>Restore</h2>
+              <p>Restore the configuration and highlight information from a file which was exported before</p>
+              <label>Select a file: </label>
+              <input type='file' accept='.json' onChange={(e) => e.target.files && restoreHighlightInfo(e.target.files[0])} />
+            </Div>
           </OptionItem>
         </Content>
       </Body>
