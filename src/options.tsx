@@ -1,7 +1,7 @@
 import React, {useEffect, useReducer, useContext} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
-import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles, exportAllHighlightInfo} from './types';
+import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles, exportAllHighlightInfo, restoreHighlightInfo} from './types';
 import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
 import AddButton from './component/AddButton';
@@ -106,7 +106,7 @@ const App: React.FC = () => {
           </OptionItem>
           <OptionItem title="Backup & Restore">
             <button onClick={() => exportAllHighlightInfo()}>Export</button>
-            <button>Import</button>
+            <input type='file' accept='.json' onChange={(e) => e.target.files && restoreHighlightInfo(e.target.files[0])} />
           </OptionItem>
         </Content>
       </Body>

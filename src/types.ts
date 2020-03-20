@@ -357,9 +357,15 @@ export const exportAllHighlightInfo = () => {
   })
 }
 
-export const restoreHighlightInfo = () => {
-  chrome.storage.local.get((items) => {
-    const blob = new Blob([JSON.stringify(items)], {type: 'application/json;charset=utf-8'})
-    FileSaver.saveAs(blob, 'awesome-highlighter.json');
-  })
+export const restoreHighlightInfo = (file?: File) => {
+  if (file) {
+    const fileReader = new FileReader()
+    fileReader.onloadend = () => {
+      if (fileReader.result) {
+        const infos = JSON.parse(fileReader.result as string)
+        chrome.storage.local.set(infos)
+      }
+    }
+    fileReader.readAsText(file)
+  }
 }
