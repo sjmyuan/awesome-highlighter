@@ -94,6 +94,8 @@ const initBackgroundScript = () => {
 
   getAvailableUrls().then(urls => {
     chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
+      console.log('regex')
+      console.log(`^(${urls.join('|').replace(/\./gi, '\\.').replace(/\//gi, '\\/')})$`)
       chrome.declarativeContent.onPageChanged.addRules([{
         conditions: [
           new chrome.declarativeContent.PageStateMatcher({

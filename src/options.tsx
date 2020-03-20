@@ -51,7 +51,7 @@ const reducer = (prevState: OptionAppState, action: Message) => {
           id: uuidv4(),
           label: 'New Style',
           backgroundColor: '#FF0000',
-          fontColor: '#FFFFFF',
+          fontColor: '#000000',
           opacity: 1
         }]
       }
