@@ -65,7 +65,7 @@ const createContextMenu = () => {
     chrome.contextMenus.removeAll(() => {
       chrome.contextMenus.create({
         id: 'highlight-text',
-        title: 'Highlight The Selected Text',
+        title: 'Awesome Highlighter',
         contexts: ['selection'],
       }, () => {
         getHighlightStyles().then((styles: HighlightStyleInfo[]) => {

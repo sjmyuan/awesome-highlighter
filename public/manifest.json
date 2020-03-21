@@ -38,7 +38,6 @@
     "contextMenus",
     "activeTab",
     "storage",
-    "tabs",
     "declarativeContent"
   ],
   "homepage_url": "https://github.com/sjmyuan/awesome-highlighter"
