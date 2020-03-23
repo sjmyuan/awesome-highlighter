@@ -377,3 +377,24 @@ export const getAvailableUrls = () => {
     })
   })
 }
+
+export const validateHighlightStyle = () => {
+  getHighlightStyles().then(styles => {
+    chrome.storage.local.get((items) => {
+      Promise.all(
+        Object.keys(items).filter(e => e.startsWith('http') || e.startsWith('https')).map(key => {
+          const highlightOps: HighlightOperation[] = items[key]
+          const highlightOpsForInvalid: HighlightOperation[] = highlightOps
+            .filter(h => h.ops === 'create' && styles.findIndex(s => h.info && (s.id === h.info.styleId)) < 0)
+            .map(h => ({id: h.id, ops: 'delete'}))
+          if (highlightOpsForInvalid.length === 0) {
+            return Promise.resolve()
+          } else {
+            return saveHighlightOperation(key, [...highlightOps, ...highlightOpsForInvalid])
+          }
+
+        })
+      )
+    })
+  })
+}

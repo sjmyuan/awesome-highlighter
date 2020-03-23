@@ -1,7 +1,7 @@
 import React, {useEffect, useReducer, useContext} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
-import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles, exportAllHighlightInfo, restoreHighlightInfo} from './types';
+import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles, exportAllHighlightInfo, restoreHighlightInfo, validateHighlightStyle} from './types';
 import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
 import AddButton from './component/AddButton';
@@ -95,6 +95,7 @@ const App: React.FC = () => {
   useEffect(() => {
     chrome.storage.local.set({'HIGHLIGHT_STYLES': state.styles}, () => {
       chrome.runtime.sendMessage({id: 'refresh-context-menu'})
+      validateHighlightStyle()
     })
   }, [state.styles])
 
