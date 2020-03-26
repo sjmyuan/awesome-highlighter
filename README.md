@@ -1,4 +1,4 @@
-# Awesome Highlighter
+# [Awesome Highlighter](https://chrome.google.com/webstore/detail/awesome-highlighter/mcaohmbjkabengkejjeacomgikphgcdk)
 
 An awesome tool to highlight your selected text, inspired by [Super Simple Highlighter](https://chrome.google.com/webstore/detail/super-simple-highlighter/hhlhjgianpocpoppaiihmlpgcoehlhio)
 
