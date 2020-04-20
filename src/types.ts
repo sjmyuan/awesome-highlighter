@@ -378,6 +378,54 @@ export const getAvailableUrls = () => {
   })
 }
 
+export class MOption<A> {
+  value: A | undefined
+  constructor(v: A | undefined) {
+    this.value = v
+  }
+  map<B>(f: (v: A) => B): MOption<B> {
+    return !!this.value ? new MOption<B>(f(this.value)) : new MOption<B>(undefined)
+  }
+  flatMap<B>(f: (v: A) => MOption<B>): MOption<B> {
+    return !!this.value ? f(this.value) : new MOption<B>(undefined)
+  }
+  getOrElse(v: A): A {
+    return !!this.value ? this.value : v
+  }
+}
+
+export interface MStorage {
+  getStyles(): Promise<HighlightStyleInfo[]>
+  saveStyles(styles: HighlightStyleInfo[]): Promise<void>
+  getHighlights(): Promise<[[String, HighlightOperation[]]]>
+  getHighlights(key: String): Promise<HighlightOperation[]>
+  saveHighlights(key: String, info: HighlightOperation[]): Promise<void>
+  saveHighlights(highlights: [String, HighlightOperation[]]): Promise<void>
+}
+
+export const chromeStorage: MStorage = new MStorage {
+  getStyles(): Promise<HighlightStyleInfo[]> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get('HIGHLIGHT_STYLES', (item) => {
+      if (chrome.runtime.lastError) {
+        reject(`error when get HIGHLIGHT_STYLES, error is ${chrome.runtime.lastError.toString()}`)
+      } else {
+        if (item['HIGHLIGHT_STYLES']) {
+          resolve(item['HIGHLIGHT_STYLES'])
+        } else {
+          resolve(defaultHighlightStyles)
+        }
+      }
+    })
+  })
+}
+saveStyles(styles: HighlightStyleInfo[]): Promise < void>
+  getHighlights(): Promise < [[String, HighlightOperation[]]] >
+    getHighlights(key: String): Promise < HighlightOperation[] >
+      saveHighlights(key: String, info: HighlightOperation[]): Promise < void>
+        saveHighlights(highlights: [String, HighlightOperation[]]): Promise<void>
+}
+
 export const validateHighlightStyle = () => {
   getHighlightStyles().then(styles => {
     chrome.storage.local.get((items) => {
@@ -387,6 +435,10 @@ export const validateHighlightStyle = () => {
           const highlightOpsForInvalid: HighlightOperation[] = highlightOps
             .filter(h => h.ops === 'create' && styles.findIndex(s => h.info && (s.id === h.info.styleId)) < 0)
             .map(h => ({id: h.id, ops: 'delete'}))
+          console.log('=========')
+          console.log(styles)
+          console.log(highlightOps)
+          console.log(highlightOpsForInvalid)
           if (highlightOpsForInvalid.length === 0) {
             return Promise.resolve()
           } else {
