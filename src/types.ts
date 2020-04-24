@@ -73,34 +73,6 @@ export const defaultHighlightStyles: HighlightStyleInfo[] = [{
   opacity: 1
 }]
 
-export const getHighlightOperation: (url: string) => Promise<HighlightOperation[]> = (url: string) => {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get(url, (item) => {
-      if (chrome.runtime.lastError) {
-        reject(`error when get ${url}, error is ${chrome.runtime.lastError.toString()}`)
-      } else {
-        if (item[url]) {
-          resolve(item[url])
-        } else {resolve([])}
-      }
-    })
-  })
-}
-
-export const saveHighlightOperation: (url: string, ops: HighlightOperation[]) => Promise<void> = (url: string, ops: HighlightOperation[]) => {
-  return new Promise((resolve, reject) => {
-    const obj: {[key: string]: HighlightOperation[];} = {}
-    obj[url] = ops
-    chrome.storage.local.set(obj, () => {
-      if (chrome.runtime.lastError) {
-        reject(`error when set highlight_information, error is ${chrome.runtime.lastError.toString()}`)
-      } else {
-        resolve()
-      }
-    })
-  })
-}
-
 export const getRangeContent = (range: Range) => {
   const div = document.createElement("div");
   div.appendChild(range.cloneContents());
@@ -278,34 +250,6 @@ export const highlightRange = (range: Range, id: string, style?: HighlightStyleI
   }
 }
 
-export const getHighlightStyles: () => Promise<HighlightStyleInfo[]> = () => {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get('HIGHLIGHT_STYLES', (item) => {
-      if (chrome.runtime.lastError) {
-        reject(`error when get HIGHLIGHT_STYLES, error is ${chrome.runtime.lastError.toString()}`)
-      } else {
-        if (item['HIGHLIGHT_STYLES']) {
-          resolve(item['HIGHLIGHT_STYLES'])
-        } else {
-          resolve(defaultHighlightStyles)
-        }
-      }
-    })
-  })
-}
-
-export const saveHighlightStyles = (styles: HighlightStyleInfo[]) => {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.set({'HIGHLIGHT_STYLES': styles}, () => {
-      if (chrome.runtime.lastError) {
-        reject(`failed to save the highlight styles, error is ${chrome.runtime.lastError.toString()}`)
-      } else {
-        resolve('success')
-      }
-    })
-  })
-}
-
 export const copyAsString = (html: string) => {
   const input = document.createElement('input')
   document.body.appendChild(input)
@@ -350,26 +294,6 @@ export const saveMarkdownToFile = (first: HighlightInfo, others: HighlightInfo[]
   FileSaver.saveAs(blob, `${title}.md`);
 }
 
-export const exportAllHighlightInfo = () => {
-  chrome.storage.local.get((items) => {
-    const blob = new Blob([JSON.stringify(items)], {type: 'application/json;charset=utf-8'})
-    FileSaver.saveAs(blob, 'awesome-highlighter.json');
-  })
-}
-
-export const restoreHighlightInfo = (file?: File) => {
-  if (file) {
-    const fileReader = new FileReader()
-    fileReader.onloadend = () => {
-      if (fileReader.result) {
-        const infos = JSON.parse(fileReader.result as string)
-        chrome.storage.local.set(infos)
-      }
-    }
-    fileReader.readAsText(file)
-  }
-}
-
 export const getAvailableUrls = () => {
   return new Promise<string[]>((resolve, reject) => {
     chrome.storage.local.get((items) => {
@@ -395,39 +319,144 @@ export class MOption<A> {
 }
 
 export interface MStorage {
-  getStyles(): Promise<HighlightStyleInfo[]>
-  saveStyles(styles: HighlightStyleInfo[]): Promise<void>
-  getHighlights(): Promise<[[String, HighlightOperation[]]]>
-  getHighlights(key: String): Promise<HighlightOperation[]>
-  saveHighlights(key: String, info: HighlightOperation[]): Promise<void>
-  saveHighlights(highlights: [String, HighlightOperation[]]): Promise<void>
+  getStyles: () => Promise<HighlightStyleInfo[]>
+  saveStyles: (styles: HighlightStyleInfo[]) => Promise<void>
+  getHighlights: () => Promise<[string, HighlightOperation[]][]>
+  getHighlight: (key: string) => Promise<HighlightOperation[]>
+  saveHighlight: (key: string, info: HighlightOperation[]) => Promise<void>
+  saveHighlights: (highlights: [string, HighlightOperation[]][]) => Promise<void>
+  exportConfiguration: () => Promise<void>
+  importConfiguration: () => Promise<void>
 }
 
-export const chromeStorage: MStorage = new MStorage {
-  getStyles(): Promise<HighlightStyleInfo[]> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get('HIGHLIGHT_STYLES', (item) => {
-      if (chrome.runtime.lastError) {
-        reject(`error when get HIGHLIGHT_STYLES, error is ${chrome.runtime.lastError.toString()}`)
-      } else {
-        if (item['HIGHLIGHT_STYLES']) {
-          resolve(item['HIGHLIGHT_STYLES'])
+export const chromeStorage: MStorage = {
+  getStyles: () => {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get('HIGHLIGHT_STYLES', (item) => {
+        if (chrome.runtime.lastError) {
+          reject(`error when get HIGHLIGHT_STYLES, error is ${chrome.runtime.lastError.toString()}`)
         } else {
-          resolve(defaultHighlightStyles)
+          if (item['HIGHLIGHT_STYLES']) {
+            resolve(item['HIGHLIGHT_STYLES'])
+          } else {
+            resolve(defaultHighlightStyles)
+          }
         }
+      })
+    })
+  },
+  saveStyles: (styles: HighlightStyleInfo[]) => {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({'HIGHLIGHT_STYLES': styles}, () => {
+        if (chrome.runtime.lastError) {
+          reject(`failed to save the highlight styles, error is ${chrome.runtime.lastError.toString()}`)
+        } else {
+          resolve()
+        }
+      })
+    })
+  },
+  getHighlights: () => {
+    return new Promise<[string, HighlightOperation[]][]>((resolve, reject) => {
+      chrome.storage.local.get((items) => {
+        resolve(Object.keys(items).filter(e => e.startsWith('http') || e.startsWith('https'))
+          .map(k => ([k, items[k] as HighlightOperation[]])))
+      })
+    })
+  },
+  getHighlight: (key: string) => {
+    return new Promise<HighlightOperation[]>((resolve, reject) => {
+      chrome.storage.local.get((items) => {
+        if (Object.keys(items).find(e => e === key)) {
+          resolve(items[key] as HighlightOperation[])
+        } else {
+          reject(`Can't find highlight ${key}`)
+        }
+      })
+    })
+  },
+  saveHighlight: (key: string, info: HighlightOperation[]) => {
+    return new Promise<void>((resolve, reject) => {
+      chrome.storage.local.set({[key]: info}, () => {
+        if (chrome.runtime.lastError) {
+          reject(`failed to save the highlight info for ${key}, error is ${chrome.runtime.lastError.toString()}`)
+        } else {
+          resolve()
+        }
+      })
+    })
+  },
+  saveHighlights: (highlights: [string, HighlightOperation[]][]) => {
+    return new Promise<void>((resolve, reject) => {
+      const info: {[key: string]: HighlightOperation[];} = {}
+      highlights.forEach(([key, value]) => {info[key] = value})
+      chrome.storage.local.set(info, () => {
+        if (chrome.runtime.lastError) {
+          reject(`failed to save the highlight info, error is ${chrome.runtime.lastError.toString()}`)
+        } else {
+          resolve()
+        }
+      })
+    })
+  },
+  exportConfiguration: () => {
+    return new Promise<void>((resolve, reject) => {
+      chrome.storage.local.get((items) => {
+        if (chrome.runtime.lastError) {
+          reject(`failed to get all configuration, error is ${chrome.runtime.lastError.toString()}`)
+        } else {
+          const blob = new Blob([JSON.stringify(items)], {type: 'application/json;charset=utf-8'})
+          FileSaver.saveAs(blob, 'awesome-highlighter.json');
+          resolve()
+        }
+      })
+    })
+  },
+  importConfiguration: (file?: File) => {
+    return new Promise<void>((resolve, reject) => {
+      if (file) {
+        const fileReader = new FileReader()
+        fileReader.onloadend = () => {
+          if (fileReader.result) {
+            const infos = JSON.parse(fileReader.result as string)
+            chrome.storage.local.set(infos, () => {
+              if (chrome.runtime.lastError) {
+                reject(`failed to import configuration, error is ${chrome.runtime.lastError.toString()}`)
+              } else {
+                resolve()
+              }
+            })
+          }
+        }
+        fileReader.readAsText(file)
+      } else {
+        reject('there is no file to import')
       }
     })
-  })
-}
-saveStyles(styles: HighlightStyleInfo[]): Promise < void>
-  getHighlights(): Promise < [[String, HighlightOperation[]]] >
-    getHighlights(key: String): Promise < HighlightOperation[] >
-      saveHighlights(key: String, info: HighlightOperation[]): Promise < void>
-        saveHighlights(highlights: [String, HighlightOperation[]]): Promise<void>
+  }
 }
 
 export const validateHighlightStyle = () => {
-  getHighlightStyles().then(styles => {
+  chromeStorage.getStyles().then(styles => {
+    chromeStorage.getHighlights().then(highlights => {
+      Promise.all(
+        highlights.map(([key, highlightOps]) => {
+          const highlightOpsForInvalid: HighlightOperation[] = highlightOps
+            .filter(h => h.ops === 'create' && styles.findIndex(s => h.info && (s.id === h.info.styleId)) < 0)
+            .map(h => ({id: h.id, ops: 'delete'}))
+          console.log('=========')
+          console.log(styles)
+          console.log(highlightOps)
+          console.log(highlightOpsForInvalid)
+          if (highlightOpsForInvalid.length === 0) {
+            return Promise.resolve()
+          } else {
+            return saveHighlightOperation(key, [...highlightOps, ...highlightOpsForInvalid])
+          }
+
+        })
+      )
+    })
     chrome.storage.local.get((items) => {
       Promise.all(
         Object.keys(items).filter(e => e.startsWith('http') || e.startsWith('https')).map(key => {
