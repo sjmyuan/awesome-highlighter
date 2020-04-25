@@ -324,12 +324,24 @@ export interface MStorage {
   saveStyles: (styles: HighlightStyleInfo[]) => Promise<void>
   appendStyles: (styles: HighlightStyleInfo[]) => Promise<void>
   getHighlights: () => Promise<[string, HighlightOperation[]][]>
+  getActiveHighlights: () => Promise<[string, HighlightOperation[]][]>
   getHighlight: (key: string) => Promise<HighlightOperation[]>
+  getActiveHighlight: (key: string) => Promise<HighlightOperation[]>
   saveHighlight: (key: string, info: HighlightOperation[]) => Promise<void>
   appendHighlight: (key: string, info: HighlightOperation[]) => Promise<void>
   saveHighlights: (highlights: [string, HighlightOperation[]][]) => Promise<void>
   exportConfiguration: () => Promise<void>
   importConfiguration: (file?: File) => Promise<void>
+}
+
+const filterActiveHighlight = (highlights: HighlightOperation[]) => {
+  return highlights.reduce<HighlightOperation[]>((acc: HighlightOperation[], ele: HighlightOperation) => {
+    if (ele.ops === 'delete') {
+      return acc.filter(e => e.id !== ele.id)
+    } else {
+      return [...acc, ele]
+    }
+  }, [])
 }
 
 export const chromeStorage: MStorage = {
@@ -372,28 +384,29 @@ export const chromeStorage: MStorage = {
       })
     })
   },
+  getActiveHighlights: () => {
+    return chromeStorage.getHighlights().then(highlights => {
+      return highlights.map(([key, infos]) => ([key, filterActiveHighlight(infos)]))
+    })
+  },
   getHighlight: (key: string) => {
-    return new Promise<HighlightOperation[]>((resolve, reject) => {
-      chrome.storage.local.get((items) => {
-        if (Object.keys(items).find(e => e === key)) {
-          resolve(items[key] as HighlightOperation[])
-        } else {
-          console.log(`Can't find highlight ${key}`)
-          resolve([])
-        }
-      })
+    return chromeStorage.getHighlights().then(highlights => {
+      const target = highlights.find(e => e[0] === key)
+      if (target) {
+        return target[1]
+      } else {
+        console.log(`Can't find highlight ${key}`)
+        return []
+      }
+    })
+  },
+  getActiveHighlight: (key: string) => {
+    return chromeStorage.getHighlight(key).then(ops => {
+      return filterActiveHighlight(ops)
     })
   },
   saveHighlight: (key: string, info: HighlightOperation[]) => {
-    return new Promise<void>((resolve, reject) => {
-      chrome.storage.local.set({[key]: info}, () => {
-        if (chrome.runtime.lastError) {
-          reject(`failed to save the highlight info for ${key}, error is ${chrome.runtime.lastError.toString()}`)
-        } else {
-          resolve()
-        }
-      })
-    })
+    return chromeStorage.saveHighlights([[key, info]])
   },
   appendHighlight: (key: string, info: HighlightOperation[]) => {
     return chromeStorage.getHighlight(key).then(oldInfo => {
@@ -450,22 +463,12 @@ export const chromeStorage: MStorage = {
   }
 }
 
-export const getActiveHighlightOps = (ops: HighlightOperation[]) => {
-  return ops.reduce<HighlightOperation[]>((acc: HighlightOperation[], ele: HighlightOperation) => {
-    if (ele.ops === 'delete') {
-      return acc.filter(e => e.id !== ele.id)
-    } else {
-      return [...acc, ele]
-    }
-  }, [])
-}
-
 export const deleteHighlightWithoutStyle = () => {
   return chromeStorage.getStyles().then(styles => {
-    return chromeStorage.getHighlights().then(highlights => {
+    return chromeStorage.getActiveHighlights().then(highlights => {
       return Promise.all(
         highlights.map(([key, highlightOps]) => {
-          const invalidHighlightOps: HighlightOperation[] = getActiveHighlightOps(highlightOps)
+          const invalidHighlightOps: HighlightOperation[] = highlightOps
             .filter(h => styles.findIndex(s => h.info && (s.id === h.info.styleId)) < 0)
             .map(h => ({id: h.id, ops: 'delete'}))
           console.log('===========')
@@ -474,7 +477,7 @@ export const deleteHighlightWithoutStyle = () => {
           if (invalidHighlightOps.length === 0) {
             return Promise.resolve()
           } else {
-            return chromeStorage.saveHighlight(key, [...highlightOps, ...invalidHighlightOps])
+            return chromeStorage.appendHighlight(key, invalidHighlightOps)
           }
 
         })
