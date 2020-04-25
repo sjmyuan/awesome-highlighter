@@ -1,7 +1,7 @@
 import React, {useEffect, useReducer, useContext} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
-import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles, exportAllHighlightInfo, restoreHighlightInfo, validateHighlightStyle} from './types';
+import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, deleteHighlightWithoutStyle, chromeStorage} from './types';
 import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
 import AddButton from './component/AddButton';
@@ -73,29 +73,17 @@ const App: React.FC = () => {
   })
 
   useEffect(() => {
-    chrome.storage.local.get('HIGHLIGHT_STYLES', (item) => {
-      if (chrome.runtime.lastError) {
-        console.log(`error when get HIGHLIGHT_STYLES, error is ${chrome.runtime.lastError.toString()}`)
-      } else {
-        if (item['HIGHLIGHT_STYLES']) {
-          dispatch({
-            id: 'LOAD_STYLES',
-            payload: item['HIGHLIGHT_STYLES']
-          })
-        } else {
-          dispatch({
-            id: 'LOAD_STYLES',
-            payload: defaultHighlightStyles
-          })
-        }
-      }
+    chromeStorage.getStyles().then(item => {
+      dispatch({
+        id: 'LOAD_STYLES',
+        payload: item
+      })
     })
   }, [])
 
   useEffect(() => {
-    chrome.storage.local.set({'HIGHLIGHT_STYLES': state.styles}, () => {
-      chrome.runtime.sendMessage({id: 'refresh-context-menu'})
-      validateHighlightStyle()
+    chromeStorage.saveStyles(state.styles).then(() => {
+      return deleteHighlightWithoutStyle()
     })
   }, [state.styles])
 
@@ -113,13 +101,13 @@ const App: React.FC = () => {
             <Div>
               <h2>Backup</h2>
               <p>Export all the configuration and highlight information to a file</p>
-              <button onClick={() => exportAllHighlightInfo()}>Export</button>
+              <button onClick={() => chromeStorage.exportConfiguration()}>Export</button>
             </Div>
             <Div>
               <h2>Restore</h2>
               <p>Restore the configuration and highlight information from a file which was exported before</p>
               <label>Select a file: </label>
-              <input type='file' accept='.json' onChange={(e) => e.target.files && restoreHighlightInfo(e.target.files[0])} />
+              <input type='file' accept='.json' onChange={(e) => e.target.files && chromeStorage.importConfiguration(e.target.files[0])} />
             </Div>
           </OptionItem>
         </Content>

@@ -321,12 +321,14 @@ export class MOption<A> {
 export interface MStorage {
   getStyles: () => Promise<HighlightStyleInfo[]>
   saveStyles: (styles: HighlightStyleInfo[]) => Promise<void>
+  appendStyles: (styles: HighlightStyleInfo[]) => Promise<void>
   getHighlights: () => Promise<[string, HighlightOperation[]][]>
   getHighlight: (key: string) => Promise<HighlightOperation[]>
   saveHighlight: (key: string, info: HighlightOperation[]) => Promise<void>
+  appendHighlight: (key: string, info: HighlightOperation[]) => Promise<void>
   saveHighlights: (highlights: [string, HighlightOperation[]][]) => Promise<void>
   exportConfiguration: () => Promise<void>
-  importConfiguration: () => Promise<void>
+  importConfiguration: (file?: File) => Promise<void>
 }
 
 export const chromeStorage: MStorage = {
@@ -354,6 +356,11 @@ export const chromeStorage: MStorage = {
           resolve()
         }
       })
+    })
+  },
+  appendStyles: (styles: HighlightStyleInfo[]) => {
+    return chromeStorage.getStyles().then(oldStyles => {
+      return chromeStorage.saveStyles([...oldStyles, ...styles])
     })
   },
   getHighlights: () => {
@@ -384,6 +391,11 @@ export const chromeStorage: MStorage = {
           resolve()
         }
       })
+    })
+  },
+  appendHighlight: (key: string, info: HighlightOperation[]) => {
+    return chromeStorage.getHighlight(key).then(oldInfo => {
+      return chromeStorage.saveHighlight(key, [...oldInfo, ...info])
     })
   },
   saveHighlights: (highlights: [string, HighlightOperation[]][]) => {
@@ -436,42 +448,28 @@ export const chromeStorage: MStorage = {
   }
 }
 
-export const validateHighlightStyle = () => {
-  chromeStorage.getStyles().then(styles => {
-    chromeStorage.getHighlights().then(highlights => {
-      Promise.all(
-        highlights.map(([key, highlightOps]) => {
-          const highlightOpsForInvalid: HighlightOperation[] = highlightOps
-            .filter(h => h.ops === 'create' && styles.findIndex(s => h.info && (s.id === h.info.styleId)) < 0)
-            .map(h => ({id: h.id, ops: 'delete'}))
-          console.log('=========')
-          console.log(styles)
-          console.log(highlightOps)
-          console.log(highlightOpsForInvalid)
-          if (highlightOpsForInvalid.length === 0) {
-            return Promise.resolve()
-          } else {
-            return saveHighlightOperation(key, [...highlightOps, ...highlightOpsForInvalid])
-          }
+export const getActiveHighlightOps = (ops: HighlightOperation[]) => {
+  return ops.reduce<HighlightOperation[]>((acc: HighlightOperation[], ele: HighlightOperation) => {
+    if (ele.ops === 'delete') {
+      return acc.filter(e => e.id !== ele.id)
+    } else {
+      return [...acc, ele]
+    }
+  }, [])
+}
 
-        })
-      )
-    })
-    chrome.storage.local.get((items) => {
-      Promise.all(
-        Object.keys(items).filter(e => e.startsWith('http') || e.startsWith('https')).map(key => {
-          const highlightOps: HighlightOperation[] = items[key]
-          const highlightOpsForInvalid: HighlightOperation[] = highlightOps
-            .filter(h => h.ops === 'create' && styles.findIndex(s => h.info && (s.id === h.info.styleId)) < 0)
+export const deleteHighlightWithoutStyle = () => {
+  return chromeStorage.getStyles().then(styles => {
+    return chromeStorage.getHighlights().then(highlights => {
+      return Promise.all(
+        highlights.map(([key, highlightOps]) => {
+          const highlightOpsForInvalid: HighlightOperation[] = getActiveHighlightOps(highlightOps)
+            .filter(h => styles.findIndex(s => h.info && (s.id === h.info.styleId)) < 0)
             .map(h => ({id: h.id, ops: 'delete'}))
-          console.log('=========')
-          console.log(styles)
-          console.log(highlightOps)
-          console.log(highlightOpsForInvalid)
           if (highlightOpsForInvalid.length === 0) {
             return Promise.resolve()
           } else {
-            return saveHighlightOperation(key, [...highlightOps, ...highlightOpsForInvalid])
+            return chromeStorage.saveHighlight(key, [...highlightOps, ...highlightOpsForInvalid])
           }
 
         })

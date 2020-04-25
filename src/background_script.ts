@@ -1,4 +1,4 @@
-import {saveHighlightOperation, getHighlightOperation, HighlightOperation, Message, getHighlightStyles, HighlightStyleInfo, copyAsString, copyAsMarkdown, getAvailableUrls} from "./types"
+import {HighlightOperation, Message, HighlightStyleInfo, copyAsString, copyAsMarkdown, chromeStorage} from "./types"
 
 const getHighlightInfoFromTab = (tab: chrome.tabs.Tab, style: HighlightStyleInfo) => {
   console.log('Send message to get highlightInfos')
@@ -6,9 +6,7 @@ const getHighlightInfoFromTab = (tab: chrome.tabs.Tab, style: HighlightStyleInfo
   if (tab.id && tab.url) {
     chrome.tabs.sendMessage(tab.id, {id: 'get_new_highlight_operations', payload: style}, (message: {highlightOperations: HighlightOperation[]}) => {
       console.log(message)
-      getHighlightOperation(tab.url as string).then(oldHighlightOperations => {
-        saveHighlightOperation(tab.url as string, oldHighlightOperations.concat(message.highlightOperations))
-      })
+      chromeStorage.appendHighlight(tab.url as string, message.highlightOperations)
     })
   }
 }
@@ -18,7 +16,7 @@ const onMessageReceived = (message: Message,
   sendResponse: (response?: any) => void) => {
 
   if (message.id === 'fetch_all_highlight_operations' && sender.url) {
-    getHighlightOperation(sender.url).then(highlightOperations => {
+    chromeStorage.getHighlight(sender.url).then(highlightOperations => {
       console.log('send back all highlight operations')
       console.log(highlightOperations)
       sendResponse(highlightOperations)
@@ -27,9 +25,10 @@ const onMessageReceived = (message: Message,
 
   if (message.id === 'delete-highlight' && message.payload && sender.url) {
     const highlightId = message.payload as string
-    getHighlightOperation(sender.url).then(highlightOperations => {
-      saveHighlightOperation(sender.url as string, highlightOperations.concat({id: highlightId, ops: 'delete'}))
-      sendResponse('success')
+    chromeStorage.getHighlight(sender.url).then(highlightOperations => {
+      return chromeStorage.saveHighlight(sender.url as string, highlightOperations.concat({id: highlightId, ops: 'delete'})).then(() => {
+        sendResponse('success')
+      })
     })
   }
 
@@ -52,7 +51,7 @@ const onMessageReceived = (message: Message,
 
 const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
   if (tab && tab.id) {
-    getHighlightStyles().then(styles => {
+    chromeStorage.getStyles().then(styles => {
       styles.filter(s => `highlight-text-${s.id}` === info.menuItemId).forEach(s => {
         getHighlightInfoFromTab(tab, s)
       })
@@ -68,7 +67,7 @@ const createContextMenu = () => {
         title: 'Awesome Highlighter',
         contexts: ['selection'],
       }, () => {
-        getHighlightStyles().then((styles: HighlightStyleInfo[]) => {
+        chromeStorage.getStyles().then((styles: HighlightStyleInfo[]) => {
           styles.map(s => {
             chrome.contextMenus.create({
               id: `highlight-text-${s.id}`,
@@ -93,7 +92,8 @@ const initBackgroundScript = () => {
 
   chrome.contextMenus.onClicked.addListener(onContextMenuClicked)
 
-  getAvailableUrls().then(urls => {
+  chromeStorage.getHighlights().then(infos => {
+    const urls = infos.map(e => e[0])
     chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
       console.log('regex')
       console.log(`^(${urls.join('|').replace(/\./gi, '\\.').replace(/\//gi, '\\/')})$`)
