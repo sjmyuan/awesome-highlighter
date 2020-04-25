@@ -24,11 +24,8 @@ const onMessageReceived = (message: Message,
   }
 
   if (message.id === 'delete-highlight' && message.payload && sender.url) {
-    const highlightId = message.payload as string
-    chromeStorage.getHighlight(sender.url).then(highlightOperations => {
-      return chromeStorage.saveHighlight(sender.url as string, highlightOperations.concat({id: highlightId, ops: 'delete'})).then(() => {
-        sendResponse('success')
-      })
+    chromeStorage.appendHighlight(sender.url as string, [{id: message.payload as string, ops: 'delete'}]).then(() => {
+      sendResponse('success')
     })
   }
 

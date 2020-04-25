@@ -43,12 +43,13 @@ export interface HighlightStyleInfo {
 }
 
 export interface OptionAppState {
+  loaded: boolean;
   styles: HighlightStyleInfo[]
   currentEditStyle?: HighlightStyleInfo
 }
 
 export const OptionAppContext = React.createContext<{state: OptionAppState, dispatch: (message: Message) => void}>(
-  {state: {styles: []}, dispatch: (message: Message) => {}}
+  {state: {loaded: false, styles: []}, dispatch: (message: Message) => {}}
 );
 
 export const defaultHighlightStyles: HighlightStyleInfo[] = [{
@@ -377,7 +378,8 @@ export const chromeStorage: MStorage = {
         if (Object.keys(items).find(e => e === key)) {
           resolve(items[key] as HighlightOperation[])
         } else {
-          reject(`Can't find highlight ${key}`)
+          console.log(`Can't find highlight ${key}`)
+          resolve([])
         }
       })
     })
@@ -463,13 +465,16 @@ export const deleteHighlightWithoutStyle = () => {
     return chromeStorage.getHighlights().then(highlights => {
       return Promise.all(
         highlights.map(([key, highlightOps]) => {
-          const highlightOpsForInvalid: HighlightOperation[] = getActiveHighlightOps(highlightOps)
+          const invalidHighlightOps: HighlightOperation[] = getActiveHighlightOps(highlightOps)
             .filter(h => styles.findIndex(s => h.info && (s.id === h.info.styleId)) < 0)
             .map(h => ({id: h.id, ops: 'delete'}))
-          if (highlightOpsForInvalid.length === 0) {
+          console.log('===========')
+          console.log(styles)
+          console.log(invalidHighlightOps)
+          if (invalidHighlightOps.length === 0) {
             return Promise.resolve()
           } else {
-            return chromeStorage.saveHighlight(key, [...highlightOps, ...highlightOpsForInvalid])
+            return chromeStorage.saveHighlight(key, [...highlightOps, ...invalidHighlightOps])
           }
 
         })

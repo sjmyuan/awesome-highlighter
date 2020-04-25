@@ -25,8 +25,10 @@ margin: 10px;
 
 const reducer = (prevState: OptionAppState, action: Message) => {
   switch (action.id) {
+    case 'REFRESH':
+      return {...prevState, loaded: false}
     case 'LOAD_STYLES':
-      return {...prevState, styles: action.payload}
+      return {...prevState, loaded: true, styles: action.payload}
     case 'UPDATE_STYLE':
       const newStyle = action.payload as HighlightStyleInfo
       const index = prevState.styles.findIndex(e => e.id === newStyle.id)
@@ -69,22 +71,27 @@ const reducer = (prevState: OptionAppState, action: Message) => {
 
 const App: React.FC = () => {
   const [state, dispatch] = useReducer<(prevState: OptionAppState, action: Message) => OptionAppState>(reducer, {
+    loaded: false,
     styles: []
   })
 
   useEffect(() => {
-    chromeStorage.getStyles().then(item => {
-      dispatch({
-        id: 'LOAD_STYLES',
-        payload: item
+    if (!state.loaded) {
+      chromeStorage.getStyles().then(item => {
+        dispatch({
+          id: 'LOAD_STYLES',
+          payload: item
+        })
       })
-    })
-  }, [])
+    }
+  }, [state.loaded])
 
   useEffect(() => {
-    chromeStorage.saveStyles(state.styles).then(() => {
-      return deleteHighlightWithoutStyle()
-    })
+    if (state.loaded) {
+      chromeStorage.saveStyles(state.styles).then(() => {
+        return deleteHighlightWithoutStyle()
+      })
+    }
   }, [state.styles])
 
   return (
@@ -107,7 +114,11 @@ const App: React.FC = () => {
               <h2>Restore</h2>
               <p>Restore the configuration and highlight information from a file which was exported before</p>
               <label>Select a file: </label>
-              <input type='file' accept='.json' onChange={(e) => e.target.files && chromeStorage.importConfiguration(e.target.files[0])} />
+              <input type='file' accept='.json' onChange={(e) => {
+                e.target.files && chromeStorage.importConfiguration(e.target.files[0]).then(() => {
+                  dispatch({id: 'REFRESH'})
+                })
+              }} />
             </Div>
           </OptionItem>
         </Content>
