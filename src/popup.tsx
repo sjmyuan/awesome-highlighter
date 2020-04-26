@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
 import HighlightCollection from './component/HighlightCollection';
-import {getHighlightOperation, HighlightInfo, HighlightOperation, HighlightStyleInfo, generateHighlightInfo, getHighlightStyles, saveStringToFile, saveMarkdownToFile} from './types';
+import {HighlightInfo, HighlightStyleInfo, saveStringToFile, saveMarkdownToFile, chromeStorage} from './types';
 
 
 const PopupDiv = styled.div`
@@ -50,18 +50,13 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState>({infos: [], styles: []})
 
   useEffect(() => {
+    //alert('run popup')
     chrome.tabs.query({active: true}, (tabs) => {
       if (tabs[0] && tabs[0].url) {
-        Promise.all([getHighlightOperation(tabs[0].url), getHighlightStyles()]).then(data => {
+        Promise.all([chromeStorage.getActiveHighlight(tabs[0].url), chromeStorage.getStyles()]).then(data => {
           const [operations, styles] = data
           setState({
-            infos: operations.reduce<HighlightOperation[]>((acc: HighlightOperation[], ele: HighlightOperation) => {
-              if (ele.ops === 'delete') {
-                return acc.filter(e => e.id !== ele.id)
-              } else {
-                return [...acc, ele]
-              }
-            }, []).map(e => e.info as HighlightInfo),
+            infos: operations.map(e => e.info as HighlightInfo),
             styles: styles
           })
         })

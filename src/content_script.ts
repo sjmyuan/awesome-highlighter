@@ -1,4 +1,4 @@
-import {highlightSelection, replayOptions, HighlightOperation, HighlightInfo, Message, getHighlightStyles, HighlightStyleInfo} from './types'
+import {highlightSelection, replayOptions, HighlightOperation, HighlightInfo, Message, HighlightStyleInfo, chromeStorage} from './types'
 
 const onExtensionMessage = (request: Message, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
   console.log('receive message')
@@ -23,7 +23,7 @@ const initContentScript: () => void = () => {
   chrome.runtime.sendMessage({id: 'fetch_all_highlight_operations'}, (highlightOperations: HighlightOperation[]) => {
     console.log('recovering highlight infos')
     console.log(highlightOperations)
-    getHighlightStyles().then(styles => {
+    chromeStorage.getStyles().then(styles => {
       replayOptions(highlightOperations, styles)
     })
   })

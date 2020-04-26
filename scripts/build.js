@@ -24,7 +24,7 @@ function build() {
         console.log(err)
         return reject(err);
       } else if (stats.compilation.errors.length > 0) {
-        console.log(stats.compilation.errors)
+        stats.compilation.errors.map(e => e.message).forEach(e => console.log(e))
         return reject(stats.compilation.errors)
       } else {
         resolve(stats)

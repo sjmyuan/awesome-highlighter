@@ -1,7 +1,7 @@
 import React, {useEffect, useReducer, useContext} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components'
-import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, defaultHighlightStyles, exportAllHighlightInfo, restoreHighlightInfo} from './types';
+import {HighlightStyleInfo, OptionAppContext, OptionAppState, Message, deleteHighlightWithoutStyle, chromeStorage} from './types';
 import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
 import AddButton from './component/AddButton';
@@ -25,8 +25,10 @@ margin: 10px;
 
 const reducer = (prevState: OptionAppState, action: Message) => {
   switch (action.id) {
+    case 'REFRESH':
+      return {...prevState, loaded: false}
     case 'LOAD_STYLES':
-      return {...prevState, styles: action.payload}
+      return {...prevState, loaded: true, styles: action.payload}
     case 'UPDATE_STYLE':
       const newStyle = action.payload as HighlightStyleInfo
       const index = prevState.styles.findIndex(e => e.id === newStyle.id)
@@ -69,33 +71,27 @@ const reducer = (prevState: OptionAppState, action: Message) => {
 
 const App: React.FC = () => {
   const [state, dispatch] = useReducer<(prevState: OptionAppState, action: Message) => OptionAppState>(reducer, {
+    loaded: false,
     styles: []
   })
 
   useEffect(() => {
-    chrome.storage.local.get('HIGHLIGHT_STYLES', (item) => {
-      if (chrome.runtime.lastError) {
-        console.log(`error when get HIGHLIGHT_STYLES, error is ${chrome.runtime.lastError.toString()}`)
-      } else {
-        if (item['HIGHLIGHT_STYLES']) {
-          dispatch({
-            id: 'LOAD_STYLES',
-            payload: item['HIGHLIGHT_STYLES']
-          })
-        } else {
-          dispatch({
-            id: 'LOAD_STYLES',
-            payload: defaultHighlightStyles
-          })
-        }
-      }
-    })
-  }, [])
+    if (!state.loaded) {
+      chromeStorage.getStyles().then(item => {
+        dispatch({
+          id: 'LOAD_STYLES',
+          payload: item
+        })
+      })
+    }
+  }, [state.loaded])
 
   useEffect(() => {
-    chrome.storage.local.set({'HIGHLIGHT_STYLES': state.styles}, () => {
-      chrome.runtime.sendMessage({id: 'refresh-context-menu'})
-    })
+    if (state.loaded) {
+      chromeStorage.saveStyles(state.styles).then(() => {
+        return deleteHighlightWithoutStyle()
+      })
+    }
   }, [state.styles])
 
   return (
@@ -112,13 +108,17 @@ const App: React.FC = () => {
             <Div>
               <h2>Backup</h2>
               <p>Export all the configuration and highlight information to a file</p>
-              <button onClick={() => exportAllHighlightInfo()}>Export</button>
+              <button onClick={() => chromeStorage.exportConfiguration()}>Export</button>
             </Div>
             <Div>
               <h2>Restore</h2>
               <p>Restore the configuration and highlight information from a file which was exported before</p>
               <label>Select a file: </label>
-              <input type='file' accept='.json' onChange={(e) => e.target.files && restoreHighlightInfo(e.target.files[0])} />
+              <input type='file' accept='.json' onChange={(e) => {
+                e.target.files && chromeStorage.importConfiguration(e.target.files[0]).then(() => {
+                  dispatch({id: 'REFRESH'})
+                })
+              }} />
             </Div>
           </OptionItem>
         </Content>
