@@ -2,6 +2,8 @@
   position: absolute;
   height: 16px;
   width: 16px;
+  left: -8px;
+  top: -8px;
   border: 1px solid;
   border-radius: 9px;
   opacity: 0.3;
