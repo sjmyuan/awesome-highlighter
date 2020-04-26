@@ -1,14 +1,5 @@
 import {HighlightStyleInfo} from "./types"
 
-export const createButton: (x: number, y: number) => HTMLElement =
-  (x: number, y: number) => {
-    const button = document.createElement('a')
-    button.classList.add('awesome-highlighter-button')
-    button.style.left = `${x}px`
-    button.style.top = `${y}px`
-    return button
-  }
-
 export const removeHighlight = (id: string) => {
   console.log('removing highlight: ' + id)
   const nodes = document.getElementsByClassName(`awesome-highlighter-${id}`)
@@ -27,8 +18,8 @@ export const showDeleteButton = (element: HTMLElement, id: string) => {
   return (event: MouseEvent) => {
     const startNode = document.getElementsByClassName(`awesome-highlighter-${id}-starter`).item(0)
     if (startNode) {
-      const clientRect = startNode.getClientRects()[0]
-      const button = createButton(clientRect.left + window.scrollX - 8, clientRect.top + window.scrollY - 8)
+      const button = document.createElement('a')
+      button.classList.add('awesome-highlighter-button')
       button.onclick = (event: MouseEvent) => {
         removeHighlight(id)
         button.remove()
@@ -59,6 +50,7 @@ export const renderNode = (node: Text, id: string, isStarter: boolean, style?: H
     mark.classList.add(`awesome-highlighter-${id}`)
     isStarter && mark.classList.add(`awesome-highlighter-${id}-starter`)
     mark.setAttribute('data-highlight-id', id)
+    mark.style.position = 'relative'
     if (style) {
       mark.style.backgroundColor = style.backgroundColor
       mark.style.color = style.fontColor
