@@ -1,24 +1,12 @@
 import {HighlightOperation, Message, HighlightStyleInfo, copyAsString, copyAsMarkdown, chromeStorage} from "./types"
 
-const showOrHidPageAction = (tab: chrome.tabs.Tab) => {
-  return chromeStorage.getActiveHighlight(tab.url as string).then(highlights => {
-    if (highlights.length > 0) {
-      chrome.pageAction.show(tab.id as number)
-    } else {
-      chrome.pageAction.hide(tab.id as number)
-    }
-  })
-}
-
 const getHighlightInfoFromTab = (tab: chrome.tabs.Tab, style: HighlightStyleInfo) => {
   console.log('Send message to get highlightInfos')
   console.log(tab)
   if (tab.id && tab.url) {
     chrome.tabs.sendMessage(tab.id, {id: 'get_new_highlight_operations', payload: style}, (message: {highlightOperations: HighlightOperation[]}) => {
       console.log(message)
-      chromeStorage.appendHighlight(tab.url as string, message.highlightOperations).then(() => {
-        return showOrHidPageAction(tab)
-      })
+      chromeStorage.appendHighlight(tab.url as string, message.highlightOperations)
     })
   }
 }
@@ -37,9 +25,7 @@ const onMessageReceived = (message: Message,
 
   if (message.id === 'delete-highlight' && message.payload && sender.url) {
     chromeStorage.appendHighlight(sender.url as string, [{id: message.payload as string, ops: 'delete'}]).then(() => {
-      return showOrHidPageAction(sender.tab as chrome.tabs.Tab).then(() => {
-        sendResponse('success')
-      })
+      sendResponse('success')
     })
   }
 
@@ -70,12 +56,6 @@ const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrom
   }
 }
 
-const onTabUpdated = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
-  if (tab.url) {
-    showOrHidPageAction(tab)
-  }
-}
-
 const createContextMenu = () => {
   return new Promise((resolve, reject) => {
     chrome.contextMenus.removeAll(() => {
@@ -103,29 +83,23 @@ const initBackgroundScript = () => {
   console.log('background running');
   chrome.runtime.onInstalled.addListener(() => {
     createContextMenu()
+    chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
+      chrome.declarativeContent.onPageChanged.addRules([
+        {
+          conditions: [
+            new chrome.declarativeContent.PageStateMatcher({
+              pageUrl: {schemes: ['http', 'https']}
+            })
+          ],
+          actions: [new chrome.declarativeContent.ShowPageAction()]
+        }
+      ]);
+    });
   });
 
   chrome.runtime.onMessage.addListener(onMessageReceived)
 
   chrome.contextMenus.onClicked.addListener(onContextMenuClicked)
-
-  chrome.tabs.onUpdated.addListener(onTabUpdated)
-
-  //chromeStorage.getHighlights().then(infos => {
-  //const urls = infos.map(e => e[0])
-  //chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
-  //console.log('regex')
-  //console.log(`^(${urls.join('|').replace(/\./gi, '\\.').replace(/\//gi, '\\/')})$`)
-  //chrome.declarativeContent.onPageChanged.addRules([{
-  //conditions: [
-  //new chrome.declarativeContent.PageStateMatcher({
-  //pageUrl: {urlMatches: `^(${urls.join('|').replace(/\./gi, '\\.').replace(/\//gi, '\\/')})$`}
-  //})
-  //],
-  //actions: [new chrome.declarativeContent.ShowPageAction()]
-  //}])
-  //})
-  //})
 }
 
 initBackgroundScript();
