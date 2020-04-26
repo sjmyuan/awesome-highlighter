@@ -50,8 +50,7 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState>({infos: [], styles: []})
 
   useEffect(() => {
-    //alert('run popup')
-    chrome.tabs.query({active: true}, (tabs) => {
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0] && tabs[0].url) {
         Promise.all([chromeStorage.getActiveHighlight(tabs[0].url), chromeStorage.getStyles()]).then(data => {
           const [operations, styles] = data

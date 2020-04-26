@@ -6,7 +6,12 @@ const getHighlightInfoFromTab = (tab: chrome.tabs.Tab, style: HighlightStyleInfo
   if (tab.id && tab.url) {
     chrome.tabs.sendMessage(tab.id, {id: 'get_new_highlight_operations', payload: style}, (message: {highlightOperations: HighlightOperation[]}) => {
       console.log(message)
-      chromeStorage.appendHighlight(tab.url as string, message.highlightOperations)
+      if(chrome.runtime.lastError){
+        console.log(`failed to get new highlight for ${tab.url}`)
+      }
+      else{
+        chromeStorage.appendHighlight(tab.url as string, message.highlightOperations)
+      }
     })
   }
 }
