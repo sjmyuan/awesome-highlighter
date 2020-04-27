@@ -6,13 +6,17 @@ import HighlightStyleCollection from './component/HighlightStyleCollection';
 import OptionItem from './component/OptionItem';
 import AddButton from './component/AddButton';
 import {v4 as uuidv4} from 'uuid';
+import Header from './component/Header';
 
 
 const Body = styled.div`
     width: 100%;
     height: auto;
     display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
+    background: #f6f6f6;
     `
 const Content = styled.div`
     max-width: 1000px;
@@ -97,6 +101,7 @@ const App: React.FC = () => {
   return (
     <OptionAppContext.Provider value={{state, dispatch}}>
       <Body>
+        <Header/>
         <Content>
           <OptionItem title="Highlight Style">
             <HighlightStyleCollection />

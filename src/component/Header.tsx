@@ -40,7 +40,7 @@ margin-right: 10px;
 `
 
 interface HeaderProps {
-  children: ReactNode | ReactNode[];
+  children?: ReactNode | ReactNode[];
 }
 
 const Header = (props: HeaderProps) => {
