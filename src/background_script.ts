@@ -6,10 +6,10 @@ const getHighlightInfoFromTab = (tab: chrome.tabs.Tab, style: HighlightStyleInfo
   if (tab.id && tab.url) {
     chrome.tabs.sendMessage(tab.id, {id: 'get_new_highlight_operations', payload: style}, (message: {highlightOperations: HighlightOperation[]}) => {
       console.log(message)
-      if(chrome.runtime.lastError){
+      if (chrome.runtime.lastError) {
         console.log(`failed to get new highlight for ${tab.url}`)
       }
-      else{
+      else {
         chromeStorage.appendHighlight(tab.url as string, message.highlightOperations)
       }
     })
@@ -53,17 +53,22 @@ const onMessageReceived = (message: Message,
 
 const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
   if (tab && tab.id) {
-    chromeStorage.getStyles().then(styles => {
-      styles.filter(s => `highlight-text-${s.id}` === info.menuItemId).forEach(s => {
-        getHighlightInfoFromTab(tab, s)
+    if (info.menuItemId == 'browse-highlight') {
+      chrome.tabs.create({url: chrome.runtime.getURL('browse_highlight.html')})
+    } else {
+      chromeStorage.getStyles().then(styles => {
+        styles.filter(s => `highlight-text-${s.id}` === info.menuItemId).forEach(s => {
+          getHighlightInfoFromTab(tab, s)
+        })
       })
-    })
+    }
   }
 }
 
 const createContextMenu = () => {
   return new Promise((resolve, reject) => {
     chrome.contextMenus.removeAll(() => {
+      chrome.contextMenus.create({id: 'browse-highlight', title: 'Browse Highlight', contexts: ['page', 'page_action']})
       chrome.contextMenus.create({
         id: 'highlight-text',
         title: 'Awesome Highlighter',
