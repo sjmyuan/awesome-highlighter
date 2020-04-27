@@ -102,6 +102,11 @@ const App: React.FC = () => {
           placeholder="Search Highlight"
           value={state.filter}
           onChange={updateFilter}
+          onKeyPress={(event) => {
+            if (event.key === 'Enter') {
+              doFilter()
+            }
+          }}
         />
         <SearchButton onClick={doFilter}>Search</SearchButton>
       </SearchDiv>
