@@ -21,6 +21,7 @@ const Body = styled.div`
 const Content = styled.div`
     max-width: 1000px;
     width: 60%
+    margin-top: 10px;
 `
 
 const Div = styled.div`
