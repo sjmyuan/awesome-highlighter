@@ -85,7 +85,9 @@ const onCommandTriggered = (command: string) => {
 const createContextMenu = () => {
   return new Promise((resolve, reject) => {
     chrome.contextMenus.removeAll(() => {
-      chrome.contextMenus.create({id: 'browse-highlight', title: 'Browse Highlight', contexts: ['page', 'page_action']})
+      chrome.contextMenus.create({
+        id: 'browse-highlight', title: 'Browse Highlight', contexts: ['page_action']
+      })
       chrome.contextMenus.create({
         id: 'highlight-text',
         title: 'Awesome Highlighter',
