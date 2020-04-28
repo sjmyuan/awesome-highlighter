@@ -65,6 +65,23 @@ const onContextMenuClicked = (info: chrome.contextMenus.OnClickData, tab?: chrom
   }
 }
 
+const onCommandTriggered = (command: string) => {
+  if (command.startsWith('awesome-highlighter-create-highlight')) {
+    const lastItem = command.split('-').pop()
+    const styleIndex: number = lastItem ? +lastItem - 1 : -1
+    chromeStorage.getStyles().then(styles => {
+      if (styleIndex >= 0 && styleIndex < styles.length) {
+        const style = styles[styleIndex]
+        chrome.tabs.query({active: true, currentWindow: true}, (tabs: chrome.tabs.Tab[]) => {
+          if (tabs[0]) {
+            getHighlightInfoFromTab(tabs[0], style)
+          }
+        })
+      }
+    })
+  }
+}
+
 const createContextMenu = () => {
   return new Promise((resolve, reject) => {
     chrome.contextMenus.removeAll(() => {
@@ -110,6 +127,8 @@ const initBackgroundScript = () => {
   chrome.runtime.onMessage.addListener(onMessageReceived)
 
   chrome.contextMenus.onClicked.addListener(onContextMenuClicked)
+
+  chrome.commands.onCommand.addListener(onCommandTriggered);
 }
 
 initBackgroundScript();

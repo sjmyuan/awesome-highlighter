@@ -35,6 +35,35 @@
       ]
     }
   ],
+  "commands": {
+    "awesome-highlighter-create-highlight-1": {
+      "description": "Create Highlight #1"
+    },
+    "awesome-highlighter-create-highlight-2": {
+      "description": "Create Highlight #2"
+    },
+    "awesome-highlighter-create-highlight-3": {
+      "description": "Create Highlight #3"
+    },
+    "awesome-highlighter-create-highlight-4": {
+      "description": "Create Highlight #4"
+    },
+    "awesome-highlighter-create-highlight-5": {
+      "description": "Create Highlight #5"
+    },
+    "awesome-highlighter-create-highlight-6": {
+      "description": "Create Highlight #6"
+    },
+    "awesome-highlighter-create-highlight-7": {
+      "description": "Create Highlight #7"
+    },
+    "awesome-highlighter-create-highlight-8": {
+      "description": "Create Highlight #8"
+    },
+    "awesome-highlighter-create-highlight-9": {
+      "description": "Create Highlight #9"
+    }
+  },
   "permissions": [
     "contextMenus",
     "activeTab",
