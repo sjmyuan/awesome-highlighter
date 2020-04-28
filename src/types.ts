@@ -485,3 +485,4 @@ export const deleteHighlightWithoutStyle = () => {
     })
   })
 }
+

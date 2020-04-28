@@ -5,6 +5,7 @@ import HighlightCollection from './component/HighlightCollection';
 import {HighlightInfo, HighlightStyleInfo, saveStringToFile, saveMarkdownToFile, chromeStorage} from './types';
 import OptionItem from './component/OptionItem';
 import Header from './component/Header';
+import Fuse from 'fuse.js'
 
 
 const BrowseDiv = styled.div`
@@ -75,6 +76,18 @@ const App: React.FC = () => {
     })
   }, [])
 
+
+  const filterOptions = {
+    shouldSort: false,
+    threshold: 0.6,
+    location: 0,
+    distance: 100,
+    maxPatternLength: 32,
+    minMatchCharLength: 3,
+    keys: ["url", "title", "highlightHTML"]
+  };
+
+
   const updateFilter = (event: React.ChangeEvent<HTMLInputElement>) => {
     setState({...state, filter: event.target.value})
   }
@@ -82,7 +95,8 @@ const App: React.FC = () => {
   const doFilter = () => {
     if (state.filter) {
       const filteredInfos = state.infos.reduce<HighlightInfo[][]>((acc, e) => {
-        const infos = e.filter(x => x.highlightHTML.indexOf(state.filter as string) > 0)
+        const fuse = new Fuse(e, filterOptions);
+        const infos = fuse.search(state.filter).map((i: {item: HighlightInfo}) => i.item)
         if (infos.length > 0) {
           return [...acc, infos]
         } else {
